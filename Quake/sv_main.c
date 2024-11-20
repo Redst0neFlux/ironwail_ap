@@ -1940,7 +1940,7 @@ void SV_SpawnServer (const char *server)
 		current_skill = 0;
 	if (current_skill > 3)
 		current_skill = 3;
-
+	// [ap] TODO: Set appropriate skill level on spawn here
 	Cvar_SetValue ("skill", (float)current_skill);
 
 //

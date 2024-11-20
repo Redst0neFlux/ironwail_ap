@@ -3154,6 +3154,33 @@ static void Host_Spawn_f (void)
 	MSG_WriteByte (&host_client->message, svc_signonnum);
 	MSG_WriteByte (&host_client->message, 3);
 	host_client->sendsignon = PRESPAWN_FLUSH;
+
+	// [ap] this is a good place to set global quakeC vars
+	// this func only gets called once, updates will have to run through an each-frame func
+	// TODO: For now these are just testing vars
+	/*
+	.float ap_items;
+	.float quad_uses;
+	.float invuln_uses;
+	.float bio_uses;
+	.float invis_uses;
+	.float backpack_uses;
+	.float medkit_uses;
+	*/
+	eval_t* val; // [ap]
+	//if grenade saver
+	//int	v = 2; // [ap]
+	// if rocket saver
+	//int	v = 1; // [ap]
+	//else
+	int	v = AP_ROCKETSAVER | AP_ROCKETJUMP | AP_GRENADEJUMP | AP_GRENADESAVER; // [ap]
+	//val = GetEdictFieldValue (host_client->edict, ED_FindFieldOffset ("ap_items"));
+	val = GetEdictFieldValueByName (host_client->edict, "ap_items");
+	if (val && val->_float != v) val->_float = v;
+	v = 5;
+	//val = GetEdictFieldValue (host_client->edict, ED_FindFieldOffset ("quad_uses"));
+	val = GetEdictFieldValueByName (host_client->edict, "quad_uses");
+	if (val && val->_float != v) val->_float = v;
 }
 
 /*

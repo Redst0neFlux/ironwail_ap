@@ -238,6 +238,8 @@ void SV_WaterMove (void)
 
 	if (!cmd.forwardmove && !cmd.sidemove && !cmd.upmove)
 		wishvel[2] -= 60;		// drift towards bottom
+		//[ap] Remove downward drift is player isnt allowed to swim
+		if (!ap_can_dive()) wishvel[2] -= 0;
 	else
 		wishvel[2] += cmd.upmove;
 
@@ -280,6 +282,17 @@ void SV_WaterMove (void)
 
 	for (i=0 ; i<3 ; i++)
 		velocity[i] += accelspeed * wishvel[i];
+
+	if (sv_player->v.waterlevel >= 2 && !ap_can_dive ()) {
+		// [ap] remove downward (negative) momentum if in water
+		if (velocity[2] < 0) velocity[2] = 0;
+		// If we are submerged, push the player up and kill any forward/sideward momentum
+		if (sv_player->v.waterlevel > 2) {
+			velocity[0] = 0;
+			velocity[1] = 0;
+			velocity[2] = 300;
+		}
+	}
 }
 
 void SV_WaterJump (void)

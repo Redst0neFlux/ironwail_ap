@@ -1445,7 +1445,7 @@ void R_ClearBoundingBoxes (void)
 	VEC_CLEAR (bbox_edicts);
 	VEC_CLEAR (bbox_linked);
 }
-
+// [ap] hijack this func for ap automap
 /*
 ================
 R_ShowBoundingBoxes -- johnfitz
@@ -1464,6 +1464,7 @@ static void R_ShowBoundingBoxes (void)
 	qcvm_t 		*oldvm;	//in case we ever draw a scene from within csqc.
 	float		dist, bestdist, extend;
 	vec3_t		rcpdelta;
+	int ap_itemextend = 8;
 
 	VEC_CLEAR (bbox_edicts);
 	VEC_CLEAR (bbox_linked);
@@ -1519,8 +1520,20 @@ static void R_ShowBoundingBoxes (void)
 			continue;
 
 		// Classname or edict num filter
-		if (!R_ShowBoundingBoxesFilter(ed))
+		if (!R_ShowBoundingBoxesFilter(ed) || !ap_can_automap())
 			continue;
+		/* //[ap] filter everything except weapons and items if automap is on
+		if (strncmp (PR_GetString (ed->v.classname), "item_", 5) != 0 && strncmp (PR_GetString (ed->v.classname), "weapon_", 7) !=0) {
+			continue;
+		}
+		else {
+			for (j = 0; j < 3; j++)
+			{
+				mins[j] = ed->v.origin[j] + ed->v.mins[j] - ap_itemextend;
+				maxs[j] = ed->v.origin[j] + ed->v.maxs[j] + ap_itemextend;
+			}
+		}
+		*/
 
 		// PVS filter
 		if (pvs)
@@ -1652,6 +1665,11 @@ static void R_ShowBoundingBoxes (void)
 			//box entity
 			VectorAdd (ed->v.mins, ed->v.origin, mins);
 			VectorAdd (ed->v.maxs, ed->v.origin, maxs);
+			/*if (ap_can_automap) {
+				vec3_t vec_temp = { ap_itemextend, ap_itemextend, ap_itemextend };
+				VectorSubtract (mins, vec_temp, mins);
+				VectorAdd (maxs, vec_temp, maxs);
+			}*/
 			R_EmitWireBox (mins, maxs, color);
 		}
 	}

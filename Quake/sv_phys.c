@@ -164,6 +164,10 @@ void SV_Impact (edict_t *e1, edict_t *e2)
 	{
 		pr_global_struct->self = EDICT_TO_PROG(e1);
 		pr_global_struct->other = EDICT_TO_PROG(e2);
+		if (!strcmp (PR_GetString (e1->v.classname), "player")) { 
+			Con_SafePrintf ("sv_impact E1 Touch of %s and %s\n", PR_GetString (e1->v.classname), PR_GetString (e2->v.classname));
+			//ED_Print (e2);
+		}
 		PR_ExecuteProgram (e1->v.touch);
 	}
 
@@ -171,7 +175,14 @@ void SV_Impact (edict_t *e1, edict_t *e2)
 	{
 		pr_global_struct->self = EDICT_TO_PROG(e2);
 		pr_global_struct->other = EDICT_TO_PROG(e1);
-		PR_ExecuteProgram (e2->v.touch);
+		if (!strcmp (PR_GetString (e1->v.classname), "player")) { 
+			Con_SafePrintf ("sv_impact E2 Touch of %s and %s\n", PR_GetString (e1->v.classname), PR_GetString (e2->v.classname));
+			//ED_Print (e2);
+		}
+		//[ap] dont execute door/button touch if door/button think is disabled
+		if (!ap_can_door() && !strcmp (PR_GetString (e2->v.classname), "door")) {}
+		else if (!ap_can_button() && !strcmp (PR_GetString (e2->v.classname), "func_button")) {}
+		else PR_ExecuteProgram (e2->v.touch);
 	}
 
 	pr_global_struct->self = old_self;

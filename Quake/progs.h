@@ -403,5 +403,6 @@ void SaveData_Init (savedata_t *save);
 void SaveData_Clear (savedata_t *save);
 void SaveData_Fill (savedata_t *save);
 void SaveData_WriteHeader (savedata_t *save);
-
+//[ap] ed json dump
+void ED_Print_JSON (edict_t* ed);
 #endif	/* QUAKE_PROGS_H */

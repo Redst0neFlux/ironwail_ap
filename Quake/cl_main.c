@@ -635,13 +635,26 @@ void CL_RelinkEntities (void)
 			}
 			//johnfitz
 		}
-		if (ent->effects & EF_BRIGHTLIGHT)
+		//[ap] Hooking into this to give ap items a dyn light
+		if (ent->effects & EF_BRIGHTLIGHT || !strcmp (ent->model->name, "progs/ap-logo.mdl"))
 		{
-			dl = CL_AllocDlight (i);
-			VectorCopy (ent->origin,  dl->origin);
-			dl->origin[2] += 16;
-			dl->radius = 400 + (rand()&31);
-			dl->die = cl.time + 0.001;
+			if (!strcmp (ent->model->name, "progs/ap-logo.mdl"))
+			{
+				// create a dynamic light with a smaller than usual radius
+				dl = CL_AllocDlight (i);
+				VectorCopy (ent->origin, dl->origin);
+				dl->origin[2] += 16;
+				dl->radius = 24;
+				dl->die = cl.time + 0.001;
+			}
+			else
+			{
+				dl = CL_AllocDlight (i);
+				VectorCopy (ent->origin, dl->origin);
+				dl->origin[2] += 16;
+				dl->radius = 400 + (rand () & 31);
+				dl->die = cl.time + 0.001;
+			}
 		}
 		if (ent->effects & EF_DIMLIGHT)
 		{

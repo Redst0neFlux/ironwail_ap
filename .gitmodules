@@ -1,0 +1,3 @@
+[submodule "Windows/APCc"]
+	path = Windows/APCc
+	url = https://github.com/randomcodegen/APCc.git

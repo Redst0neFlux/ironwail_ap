@@ -1458,6 +1458,11 @@ void ED_LoadFromFile (const char *data)
 	dfunction_t	*func;
 	edict_t		*ent = NULL;
 	int		inhibit = 0;
+	// TODO:
+	// [ap] This will be calculated dynamically depending on the settings later
+	// [ap] Sync sourceport ap vars with server on map/savefile load here
+	// the quakeC vars will need to be synced in a different location
+	int ap_item_count = 0;
 
 	pr_global_struct->time = qcvm->time;
 
@@ -1554,7 +1559,37 @@ void ED_LoadFromFile (const char *data)
 // immediately call spawn function
 //
 	// look for the spawn function
-		func = ED_FindFunction (classname);
+		
+		// TODO: AP toggle
+		// [ap] Overwrite spawn function of items and weapons with ap models
+		if (!strncmp (PR_GetString (ent->v.classname), "item_", 5) || !strncmp (PR_GetString (ent->v.classname), "weapon_", 7))
+		{
+			ap_item_count += 1;
+			func = ED_FindFunction ("item_ap");
+			// [ap] offset ent origin in case of .bsp models
+			if (!strcmp (PR_GetString (ent->v.classname), "item_shells") || !strcmp (PR_GetString (ent->v.classname), "item_spikes")
+				|| !strcmp (PR_GetString (ent->v.classname), "item_rockets") || !strcmp (PR_GetString (ent->v.classname), "item_cells")
+				|| !strcmp (PR_GetString (ent->v.classname), "item_health"))
+			{
+				ent->v.origin[0] += 10;
+				ent->v.origin[1] += 10;
+			}
+			ED_Print_JSON (ent);
+		}
+		else if (!strcmp (PR_GetString (ent->v.classname), "trigger_secret"))
+		{
+			ED_Print_JSON (ent);
+			func = ED_FindFunction (classname);
+		}
+		else if (!strcmp (PR_GetString (ent->v.classname), "trigger_changelevel"))
+		{
+			ED_Print_JSON (ent);
+			func = ED_FindFunction (classname);
+		}
+		else
+		{
+			func = ED_FindFunction (classname);
+		}
 
 		if (!func)
 		{
@@ -2558,4 +2593,151 @@ void SaveData_WriteHeader (savedata_t *save)
 		fprintf (save->file, "%s\n", save->lightstyles[i]);
 
 	ED_WriteGlobals (save);
+}
+
+// [ap] Funcs for printing
+// [ap] Structure to hold a string and its count
+typedef struct {
+	char str[50];
+	int count;
+} StringCount;
+StringCount stringCounts[30];
+int numStrings = 0;
+int count = 0;
+// Function to find the index of a string in the array
+int findString (StringCount stringCounts[], int size, char* str) {
+	for (int i = 0; i < size; i++) {
+		if (strcmp (stringCounts[i].str, str) == 0) {
+			return i;
+		}
+	}
+	return -1;
+}
+// [ap] Print edicts in json style format for exporting
+void ED_Print_JSON (edict_t* ed)
+{
+	ddef_t* d;
+	int* v;
+	int		i, j, l;
+	const char* name;
+	int		type;
+
+	qboolean spawnflags_printed = false;
+	char* itemname = "";
+	char* classname = "";
+	char* spawnflags = "0.0";
+
+	if (ed->free)
+	{
+		Con_Printf ("FREE\n");
+		return;
+	}
+
+	Con_SafePrintf ("{\"id\": %i, ", NUM_FOR_EDICT (ed));
+	for (i = 1; i < qcvm->progs->numfielddefs; i++)
+	{
+		d = &qcvm->fielddefs[i];
+		name = PR_GetString (d->s_name);
+		l = strlen (name);
+		if (l > 1 && name[l - 2] == '_')
+			continue;	// skip _x, _y, _z vars
+
+		v = (int*)((char*)&ed->v + d->ofs * 4);
+
+		// if the value is still all 0, skip the field
+		type = d->type & ~DEF_SAVEGLOBAL;
+
+		for (j = 0; j < type_size[type]; j++)
+		{
+			if (v[j])
+				break;
+		}
+		if (j == type_size[type])
+			continue;
+		if (!strcmp (name, "classname")) {
+			char* copy;
+			char* token;
+			classname = (char*)Z_Strdup (PR_ValueString (d->type, (eval_t*)v));
+			copy = (char*)Z_Strdup (PR_ValueString (d->type, (eval_t*)v));
+
+			if (!strcmp (copy, "item_artifact_super_damage")) {
+				//Con_SafePrintf("\"name\": \"Quad Damage (%i)\", ",count);
+				itemname = "Quad Damage";
+			}
+			else if (!strcmp (copy, "item_artifact_envirosuit")) {
+				//Con_SafePrintf("\"name\": \"Biosuit (%i)\", ",count);
+				itemname = "Biosuit";
+			}
+			else if (!strcmp (copy, "trigger_changelevel")) {
+				//Con_SafePrintf("\"name\": \"Exit\", ");
+				itemname = "Exit";
+			}
+			else if (!strcmp (copy, "item_key1")) {
+				//Con_SafePrintf("\"name\": \"Silver Key\", ");
+				itemname = "Silver Key";
+			}
+			else if (!strcmp (copy, "item_key2")) {
+				//Con_SafePrintf("\"name\": \"Gold Key\", ");
+				itemname = "Gold Key";
+			}
+			else if (!strcmp (copy, "item_armor1")) {
+				itemname = "Green Armor";
+			}
+			else if (!strcmp (copy, "item_armor2")) {
+				itemname = "Yellow Armor";
+			}
+			else if (!strcmp (copy, "item_armorInv")) {
+				itemname = "Red Armor";
+			}
+			else {
+				token = strtok (copy, "_");
+				token = strtok (NULL, "_");
+				if (!strcmp (token, "artifact")) token = strtok (NULL, "_");
+				if (islower (token[0])) token[0] = toupper (token[0]);
+				//Con_SafePrintf("\"name\": \"%s (%i)\", ", token, count);
+				itemname = (char*)Z_Strdup (token);
+			}
+
+			Z_Free (copy);
+			//Con_SafePrintf("\"%s\": ", name);
+			//Con_SafePrintf("\"%s\", ", PR_ValueString(d->type, (eval_t*)v));
+
+		}
+		else if (!strcmp (name, "spawnflags") && !spawnflags_printed) {
+			//Con_SafePrintf("\"%s\": ", name);
+			//Con_SafePrintf("%s, ", PR_ValueString(d->type, (eval_t*)v));
+			spawnflags = (char*)Z_Strdup (PR_ValueString (d->type, (eval_t*)v));
+			spawnflags_printed = true;
+		}
+	}
+
+
+	//if (!spawnflags_printed) Con_SafePrintf("\"spawnflags\": 0.0, ");
+	if (!spawnflags_printed) spawnflags = "0.0";
+	// Handle different health types
+	if (!strcmp (classname, "item_health")) {
+		float spawnflags_f = strtof (spawnflags, NULL);
+		int spawnflags_i = (int)spawnflags_f;
+		if (spawnflags_i & 1) itemname = "Small Medkit";
+		else if (spawnflags_i & 2) itemname = "Megahealth";
+		else itemname = "Large Medkit";
+	}
+	int index = findString (stringCounts, numStrings, itemname);
+	if (index != -1) {
+		// Increment the count if found
+		stringCounts[index].count++;
+		count = stringCounts[index].count;
+	}
+	else {
+		// Add a new entry if not found
+		strcpy (stringCounts[numStrings].str, itemname);
+		stringCounts[numStrings].count = 1;
+		numStrings++;
+		count = 1;
+	}
+	Con_SafePrintf ("\"name\": \"%s (%i)\", ", itemname, count);
+	Con_SafePrintf ("\"classname\": \"%s\", ", classname);
+	Con_SafePrintf ("\"spawnflags\": %s, ", spawnflags);
+	Con_SafePrintf ("\"density\": 0},\n");
+
 }

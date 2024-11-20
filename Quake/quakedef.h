@@ -290,6 +290,8 @@ typedef struct
 #include "cdaudio.h"
 #include "glquake.h"
 
+// [ap] includes
+#include "ap_impl.h"
 
 //=============================================================================
 
