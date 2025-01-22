@@ -145,6 +145,11 @@ typedef struct {
 	bool notify;
 } uint64t_bool_struct;
 
+typedef struct {
+	uint16_t item_count;
+	int16_t total;
+} VictoryStats;
+
 // AP defines
 #define AP (ap_global_state > AP_UNINIT)
 #define APConnected (ap_global_state == AP_CONNECTED)
@@ -172,6 +177,7 @@ extern void ap_set_inventory_to_max ();
 // Extern AP Lib Funcs
 extern void ap_init_connection ();
 extern int AP_CheckLocation (uint64_t loc_hash, char* loc_type);
+extern VictoryStats AP_VictoryStats (char* victory_name);
 extern void ap_on_map_load (char* mapname);
 extern uint64_t* ap_get_key_flags (const char* mapname);
 extern void ap_remaining_items (uint16_t* collected, uint16_t* total, char* mapname);

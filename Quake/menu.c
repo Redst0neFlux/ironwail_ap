@@ -1767,10 +1767,20 @@ static void M_Maps_UpdateLayout (void)
 	mapsmenu.y = m_top + (((m_height - height) / 2) & ~7);
 	mapsmenu.list.viewsize = (height - MAPLIST_OFS - 16) / 8;
 }
-
+//[ap]
+VictoryStats exit_stats;
+VictoryStats secret_stats;
+VictoryStats boss_stats;
 static void M_Maps_Init (void)
 {
 	int i, active, type, prev_type;
+
+	// [ap] grab and draw goals
+	exit_stats = AP_VictoryStats ("Exit");
+	secret_stats = AP_VictoryStats ("Secret");
+	boss_stats = AP_VictoryStats ("Boss");
+
+	
 
 	M_Maps_UpdateLayout ();
 
@@ -1862,7 +1872,15 @@ void M_Maps_Draw (void)
 	int namecols, desccols;
 	//[ap] introduce gap_size
 	int gap_size = 14;
-
+	// [ap] draw required goals
+	char buffer[32];
+	M_PrintWhite (mapsmenu.x, 0, "Goals:");
+	q_snprintf (buffer, sizeof (buffer), "Exits: %i/%i", exit_stats.item_count, exit_stats.total);
+	M_PrintWhite (mapsmenu.x + (8 << 3), 16, buffer);
+	q_snprintf (buffer, sizeof (buffer), "Secrets: %i/%i", secret_stats.item_count, secret_stats.total);
+	M_PrintWhite (mapsmenu.x + (8 << 3), 24, buffer);
+	q_snprintf (buffer, sizeof (buffer), "Bosses: %i/%i", boss_stats.item_count, boss_stats.total);
+	M_PrintWhite (mapsmenu.x + (8 << 3), 32, buffer);
 	M_Maps_UpdateLayout ();
 
 	namecols = (int) CLAMP (14, mapsmenu.cols * 0.375f, 56) & ~1;
@@ -1975,6 +1993,9 @@ void M_Maps_Draw (void)
 	}
 
 	M_List_DrawSearch (&mapsmenu.list, x, y + mapsmenu.list.viewsize*gap_size + 4, namecols);
+
+	// [ap]Draw goal stats
+	
 }
 
 void M_Maps_Char (int key)

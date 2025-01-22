@@ -694,6 +694,25 @@ void AP_SyncProgress (void)
 	ap_game_state->need_sync = false;
 }
 
+
+
+VictoryStats AP_VictoryStats (char* victory_name)
+{
+	item_count_struct* value;
+
+	value = ght_lookup_str (ap_goals, victory_name);
+	if (value == NULL) {
+		VictoryStats empty_stats = { 0, 0 };
+		return empty_stats;
+	}
+
+	VictoryStats stats;
+	stats.item_count = AP_ItemCount (value->net_id);
+	stats.total = value->count;
+
+	return stats;
+}
+
 bool AP_CheckVictory (void)
 {
 	if (reached_goal) return false; // Already reached victory state once
@@ -1191,7 +1210,7 @@ extern void ap_process_global_tic (void)
 		if (!item_info) return;
 
 		const char* item_type = json_string_value (json_object_get (item_info, "type"));
-		if (!strcmp(item_type, "map") || !strcmp (item_type, "trap") || !strcmp (item_type, "key")){
+		if (!strcmp(item_type, "map") || !strcmp (item_type, "trap") || !strcmp (item_type, "key") || !strcmp (item_type, "goal")){
 			ap_get_item (queue_item->item_id, !queue_item->notify, true);
 		}
 		else {
