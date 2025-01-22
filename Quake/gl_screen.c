@@ -99,6 +99,9 @@ cvar_t		show_speed_y = {"show_speed_y", "0", CVAR_ARCHIVE };
 cvar_t		show_speed_alpha = {"show_speed_alpha", "0.8", CVAR_ARCHIVE };
 // [ap] HUD cvars
 cvar_t		ap_shorthud = { "ap_shorthud", "0", CVAR_ARCHIVE };
+cvar_t		ap_alwaysshowunlocks = { "ap_alwaysshowunlocks", "1", CVAR_ARCHIVE };
+cvar_t		ap_alwaysshowchecks = { "ap_alwaysshowchecks", "1", CVAR_ARCHIVE };
+cvar_t		ap_alwaysshowinventory = { "ap_alwaysshowinventory", "1", CVAR_ARCHIVE };
 
 //johnfitz
 cvar_t		scr_usekfont = {"scr_usekfont", "0", CVAR_NONE}; // 2021 re-release
@@ -655,6 +658,9 @@ void SCR_Init (void)
 	Cvar_RegisterVariable (&show_speed_alpha);
 	// [ap] HUD cvars
 	Cvar_RegisterVariable (&ap_shorthud);
+	Cvar_RegisterVariable (&ap_alwaysshowunlocks);
+	Cvar_RegisterVariable (&ap_alwaysshowchecks);
+	Cvar_RegisterVariable (&ap_alwaysshowinventory);
 	//johnfitz
 	Cvar_RegisterVariable (&scr_usekfont); // 2021 re-release
 	Cvar_SetCallback (&scr_fov, SCR_Callback_refdef);
@@ -778,23 +784,8 @@ void SCR_DrawAPHUD (void)
 	GL_SetCanvas (CANVAS_SBAR);
 	x = 0;
 	y = 0;
-	
-	if (!ap_scoreboard) {
-		if (ap_shorthud.value) sprintf (str, "Qua:%i/%i Ivl:%i/%i Bio:%i/%i Ivs:%i/%i", ap_inv_arr[0], ap_inv_max_arr[0], ap_inv_arr[1], ap_inv_max_arr[1], ap_inv_arr[2], ap_inv_max_arr[2], ap_inv_arr[3], ap_inv_max_arr[3]);
-		else sprintf (str, "Quad:%i/%i Invuln:%i/%i Bio:%i/%i Invis:%i/%i", ap_inv_arr[0], ap_inv_max_arr[0], ap_inv_arr[1], ap_inv_max_arr[1], ap_inv_arr[2], ap_inv_max_arr[2], ap_inv_arr[3], ap_inv_max_arr[3]);
-		x = ((glcanvas.left + glcanvas.right) / 2) - ((strlen (str) << 3) / 2);
-		if (hudstyle == HUD_CLASSIC || hudstyle == HUD_QUAKEWORLD)
-			y = glcanvas.bottom - 60;
-		else
-			y = glcanvas.bottom - 20;
-		Draw_String (x, y, str);
 
-		y = glcanvas.bottom - 80;
-		if (ap_shorthud.value) sprintf (str, "M:%i/%i A:%i/%i BP:%i/%i", ap_inv_arr[5], ap_inv_max_arr[5], ap_inv_arr[6], ap_inv_max_arr[6], ap_inv_arr[4], ap_inv_max_arr[4]);
-		else sprintf (str, "Medkit:%i/%i Armor:%i/%i Backpack:%i/%i", ap_inv_arr[5], ap_inv_max_arr[5], ap_inv_arr[6], ap_inv_max_arr[6], ap_inv_arr[4], ap_inv_max_arr[4]);
-		x = glcanvas.left;
-		Draw_String (x, y, str);
-
+	if (ap_alwaysshowchecks.value) {
 		// Draw collection stats
 		uint16_t collected = 0;
 		uint16_t total = 0;
@@ -804,7 +795,41 @@ void SCR_DrawAPHUD (void)
 		y = glcanvas.bottom - 80;
 		Draw_String (x, y, str);
 	}	
-	else {
+
+	if (ap_scoreboard || ap_alwaysshowinventory.value) {
+		if (ap_shorthud.value) sprintf (str, "Qua:%i/%i Ivl:%i/%i Bio:%i/%i Ivs:%i/%i", ap_inv_arr[0], ap_inv_max_arr[0], ap_inv_arr[1], ap_inv_max_arr[1], ap_inv_arr[2], ap_inv_max_arr[2], ap_inv_arr[3], ap_inv_max_arr[3]);
+		else sprintf (str, "Quad:%i/%i Invuln:%i/%i Bio:%i/%i Invis:%i/%i", ap_inv_arr[0], ap_inv_max_arr[0], ap_inv_arr[1], ap_inv_max_arr[1], ap_inv_arr[2], ap_inv_max_arr[2], ap_inv_arr[3], ap_inv_max_arr[3]);
+		x = ((glcanvas.left + glcanvas.right) / 2) - ((strlen (str) << 3) / 2);
+		if (hudstyle == HUD_CLASSIC || hudstyle == HUD_QUAKEWORLD)
+			y = glcanvas.bottom - 60;
+		else
+			y = glcanvas.bottom - 20;
+		if (ap_scoreboard) y -= 20;
+		Draw_String (x, y, str);
+
+		y = glcanvas.bottom - 80;
+		if (ap_shorthud.value) sprintf (str, "M:%i/%i A:%i/%i BP:%i/%i", ap_inv_arr[5], ap_inv_max_arr[5], ap_inv_arr[6], ap_inv_max_arr[6], ap_inv_arr[4], ap_inv_max_arr[4]);
+		else sprintf (str, "Medkit:%i/%i Armor:%i/%i Backpack:%i/%i", ap_inv_arr[5], ap_inv_max_arr[5], ap_inv_arr[6], ap_inv_max_arr[6], ap_inv_arr[4], ap_inv_max_arr[4]);
+		x = glcanvas.left;
+		Draw_String (x, y, str);
+
+		// dont draw twice
+		if (!ap_alwaysshowchecks.value) {
+			// Draw collection stats
+			uint16_t collected = 0;
+			uint16_t total = 0;
+			ap_remaining_items (&collected, &total);
+			sprintf (str, "AP: %i/%i", collected, total);
+			x = glcanvas.right - (strlen (str) << 3);
+			y = glcanvas.bottom - 80;
+			Draw_String (x, y, str);
+		}
+	}
+	
+	if (ap_scoreboard || ap_alwaysshowunlocks.value)
+	{
+		x = 0;
+		y = 0;
 		GL_SetCanvas (CANVAS_TOPRIGHT);
 		if (ap_shorthud.value) sprintf (str, "Ju:%i Do:%i Bu:%i Di:%i", ap_can_jump (), ap_can_door (), ap_can_button (), ap_can_dive ());
 		else sprintf (str, "Jump:%i Door:%i Button:%i Dive:%i", ap_can_jump (), ap_can_door (), ap_can_button (), ap_can_dive ());

@@ -1,3 +1,23 @@
+# Ironwail AP
+A fork of [Ironwail] (https://github.com/andrei-drexler/ironwail) designed to integrate into [Archipelago] (https://github.com/ArchipelagoMW/Archipelago/releases).
+
+## New cvars:
+These cvars set if HUD elements are always shown.
+If set to 0, the HUD element only shows up when the scoreboard is open (tab by default).
+
+- ap_shorthud | shortens the names of HUD elements to take up less space
+- ap_alwaysshowunlocks | always shows the unlocked abilities in the top-right corner
+- ap_alwaysshowchecks | always shows the available/collected checks of the current map in the bottom-right corner
+- ap_alwaysshowinventory | always shows the inventory items in the bottom middle
+
+If scr_showspeed is enabled:
+
+- show_speed_x | Change the x coordinates of the speed bar
+- show_speed_y | Change the y coordinates of the speed bar
+
+
+# Original Ironwail Readme:
+
 # What's this?
 A fork of the popular GLQuake descendant [QuakeSpasm](https://sourceforge.net/projects/quakespasm/) with a focus on high performance instead of maximum compatibility, with a few extra features sprinkled on top.
 
