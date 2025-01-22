@@ -979,6 +979,11 @@ void SV_Physics_Client (edict_t	*ent, int num)
 			sv_player->v.ammo_rockets = (int)sv_player->v.ammo_rockets + ap_give_ammo_arr[2];
 			sv_player->v.ammo_cells = (int)sv_player->v.ammo_cells + ap_give_ammo_arr[3];
 
+			if (sv_player->v.weapon == IT_SHOTGUN || sv_player->v.weapon == IT_SUPER_SHOTGUN) sv_player->v.currentammo = sv_player->v.ammo_shells;
+			if (sv_player->v.weapon == IT_NAILGUN || sv_player->v.weapon == IT_SUPER_NAILGUN) sv_player->v.currentammo = sv_player->v.ammo_nails;
+			if (sv_player->v.weapon == IT_ROCKET_LAUNCHER || sv_player->v.weapon == IT_GRENADE_LAUNCHER) sv_player->v.currentammo = sv_player->v.ammo_rockets;
+			if (sv_player->v.weapon == IT_LIGHTNING) sv_player->v.currentammo = sv_player->v.ammo_cells;
+
 			ap_give_ammo = 0;
 		}
 
@@ -1005,6 +1010,32 @@ void SV_Physics_Client (edict_t	*ent, int num)
 		int	v = ap_get_quakec_apflag (); // [ap] return quakec flag to be set
 		val = GetEdictFieldValueByName (sv_player, "ap_items");
 		if (val) val->_float = v;
+
+		if (ap_give_inv)
+		{
+			val = GetEdictFieldValueByName (sv_player, "quad_uses");
+			if (val && val->_float != ap_inv_arr[0]) val->_float = ap_inv_arr[0];
+
+			val = GetEdictFieldValueByName (sv_player, "invuln_uses");
+			if (val && val->_float != ap_inv_arr[1]) val->_float = ap_inv_arr[1];
+
+			val = GetEdictFieldValueByName (sv_player, "bio_uses");
+			if (val && val->_float != ap_inv_arr[2]) val->_float = ap_inv_arr[2];
+
+			val = GetEdictFieldValueByName (sv_player, "invis_uses");
+			if (val && val->_float != ap_inv_arr[3]) val->_float = ap_inv_arr[3];
+
+			val = GetEdictFieldValueByName (sv_player, "backpack_uses");
+			if (val && val->_float != ap_inv_arr[4]) val->_float = ap_inv_arr[4];
+
+			val = GetEdictFieldValueByName (sv_player, "medkit_uses");
+			if (val && val->_float != ap_inv_arr[5]) val->_float = ap_inv_arr[5];
+
+			val = GetEdictFieldValueByName (sv_player, "armor_uses");
+			if (val && val->_float != ap_inv_arr[6]) val->_float = ap_inv_arr[6];
+
+			ap_give_inv = 0;
+		}
 
 		val = GetEdictFieldValueByName (sv_player, "quad_uses");
 		ap_inv_arr[0] = (int)val->_float;

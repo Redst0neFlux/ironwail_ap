@@ -44,6 +44,8 @@ int ap_active_traps[TRAPS_MAX]; // 0 lowhealth, 1 death, 2 mouse, 3 sound, 4 jum
 
 int ap_skill = 0;
 
+int ap_shell_recharge = 0;
+
 int ap_shub_unlocked = 0;
 int ap_shub_defeated = 0;
 
@@ -890,13 +892,12 @@ static void ap_get_item (ap_net_id_t item_id, bool silent, bool is_new)
 		ap_inventory_flags |= flags;
 
 		// grab ammonum and fill give_arr
-		ap_give_ammo = 1;
 		int ammonum = (int)json_integer_value (json_object_get (item_info, "ammonum"));
 		int ammo = (int)json_integer_value (json_object_get (item_info, "ammo"));
 		ap_give_ammo_arr[ammonum] += ammo;
+		ap_give_ammo = 1;
 	}
 	else if (!strcmp (item_type, "ammo") || !strcmp (item_type, "maxammo")) {
-		ap_give_ammo = 1;
 		int ammonum = (int)json_integer_value (json_object_get (item_info, "ammonum"));
 		int ammo = (int)json_integer_value (json_object_get (item_info, "ammo"));
 		ap_give_ammo_arr[ammonum] += ammo;
@@ -906,6 +907,7 @@ static void ap_get_item (ap_net_id_t item_id, bool silent, bool is_new)
 			int capacity = (int)json_integer_value (capacity_obj);
 			ap_max_ammo_arr[ammonum] += capacity;
 		}
+		ap_give_ammo = 1;
 	}
 	else if (!strcmp (item_type, "inventory")) {
 		int invnum = (int)json_integer_value (json_object_get (item_info, "invnum"));
@@ -920,6 +922,7 @@ static void ap_get_item (ap_net_id_t item_id, bool silent, bool is_new)
 		int rounded_capacity = (int)floor (capacity);
 		ap_inv_max_arr[invnum] += rounded_capacity;
 		ap_inv_arr[invnum] += rounded_capacity;
+		ap_give_inv = 1;
 	}
 	else if (!strcmp (item_type, "invcapacity")) {
 		int invnum = (int)json_integer_value (json_object_get (item_info, "invnum"));
@@ -934,6 +937,7 @@ static void ap_get_item (ap_net_id_t item_id, bool silent, bool is_new)
 		int rounded_capacity = (int)floor (capacity);
 		ap_inv_max_arr[invnum] += rounded_capacity;
 		ap_inv_arr[invnum] += rounded_capacity;
+		ap_give_inv = 1;
 	}
 	else if (!strcmp (item_type, "ability")) {
 		GString* gs_key = g_string_new(json_string_value(json_object_get(item_info, "enables")));
@@ -1024,6 +1028,10 @@ void ap_disable_trap (json_t* trap_info) {
 }
 
 // runs every ingame tic
+
+clock_t last_second_60 = 0;
+clock_t last_second_1 = 0;
+
 extern void ap_process_ingame_tic (void)
 {
 	if (ap_global_state != AP_INITIALIZED) return;
@@ -1103,8 +1111,33 @@ extern void ap_process_ingame_tic (void)
 		}
 	}
 
-	// TODO: Handle inventory items recharging every x seconds
-	
+	// Grab current time for time-based recharges
+
+	clock_t current_time = clock ();
+
+	double elapsed_seconds_60 = (double)(current_time - last_second_60) / CLOCKS_PER_SEC;
+	double elapsed_seconds_1 = (double)(current_time - last_second_1) / CLOCKS_PER_SEC;
+
+	// TODO: Keep track of individual item use times here for more consistent recharging
+	// Recharge inventory items every 60 seconds
+	if (elapsed_seconds_60 >= 60.0) {
+		for (int i = 0; i < INV_MAX; i++)
+		{
+			if (ap_inv_arr[i] < ap_inv_max_arr[i])
+				ap_inv_arr[i] += 1;
+			ap_give_inv = 1;
+		}
+		last_second_60 = current_time;
+	}
+
+	// Recharge 1 shell per second
+	if (ap_shell_recharge && elapsed_seconds_1 >= 1.0) {
+		ap_give_ammo = 1;
+		// make sure to not overwrite if there are active values present
+		if (ap_give_ammo_arr[0] == 0)
+			ap_give_ammo_arr[0] = 1;
+		last_second_1 = current_time;
+	}
 	// Handle messages
 	AP_ProcessMessages ();
 }
@@ -1142,7 +1175,7 @@ extern void ap_process_global_tic (void)
 }
 
 extern void ap_set_inventory_to_max (void) {
-	for (int i = 0; i < 7; i++)
+	for (int i = 0; i < INV_MAX; i++)
 	{
 		ap_inv_arr[i] = ap_inv_max_arr[i];
 	}
@@ -1397,6 +1430,9 @@ static void set_settings (json_t* jobj)
 		// set skill level
 		if (!strcmp (k_settingkey, "difficulty")) {
 			ap_skill = (int)json_integer_value (v_settingdata);
+		}
+		if (!strcmp (k_settingkey, "shell_recharge")) {
+			ap_shell_recharge = (int)json_integer_value (v_settingdata);
 		}
 	}
 }
