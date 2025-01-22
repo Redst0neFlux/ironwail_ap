@@ -1118,8 +1118,8 @@ extern void ap_process_ingame_tic (void)
 	double elapsed_seconds_60 = (double)(current_time - last_second_60) / CLOCKS_PER_SEC;
 	double elapsed_seconds_1 = (double)(current_time - last_second_1) / CLOCKS_PER_SEC;
 
-	// TODO: Keep track of individual item use times here for more consistent recharging
-	// Recharge inventory items every 60 seconds
+	// TODO: Keep track of individual "last item use" times here for more consistent recharging
+	// For now recharge inventory items every 60 seconds
 	if (elapsed_seconds_60 >= 60.0) {
 		for (int i = 0; i < INV_MAX; i++)
 		{

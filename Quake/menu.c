@@ -1043,7 +1043,8 @@ void M_List_Char (menulist_t *list, int key)
 void M_List_Mousemove (menulist_t *list, int yrel)
 {
 	int i, firstvis, numvis;
-	int gap_size = 14;
+	int gap_size = 8;
+	if (m_state == m_maps) gap_size = 14;
 
 	M_List_GetVisibleRange (list, &firstvis, &numvis);
 	if (!numvis || yrel < 0)
