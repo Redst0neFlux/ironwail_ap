@@ -9,3 +9,9 @@ Quake/ironwail
 build/
 /.vs
 /out/
+update_submodule.txt
+*.sav
+Windows/VisualStudio/id1
+*.txt
+*.json
+*.cache

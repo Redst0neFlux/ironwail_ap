@@ -1460,8 +1460,9 @@ void ED_LoadFromFile (const char *data)
 	int		inhibit = 0;
 	// TODO:
 	// [ap] This will be calculated dynamically depending on the settings later
-	// [ap] Sync sourceport ap vars with server on map/savefile load here
-	// the quakeC vars will need to be synced in a different location
+	// should not exceed 512 edicts
+	edict_t* remove_after[512];
+	int remove_array_index = 0;
 	int ap_item_count = 0;
 
 	pr_global_struct->time = qcvm->time;
@@ -1541,9 +1542,42 @@ void ED_LoadFromFile (const char *data)
 				|| (current_skill == 1 && ((int)ent->v.spawnflags & SPAWNFLAG_NOT_MEDIUM))
 				|| (current_skill >= 2 && ((int)ent->v.spawnflags & SPAWNFLAG_NOT_HARD)) )
 		{
-			ED_Free (ent);
-			inhibit++;
-			continue;
+			// [ap] Don't despawn items on other skills for consistency
+			
+			// This does include deathmatch items if all three spawnflags are set
+			if ( ((int)ent->v.spawnflags & (SPAWNFLAG_NOT_EASY | SPAWNFLAG_NOT_MEDIUM | SPAWNFLAG_NOT_HARD)) == (SPAWNFLAG_NOT_EASY | SPAWNFLAG_NOT_MEDIUM | SPAWNFLAG_NOT_HARD))
+			{
+				if (!Q_strncmp (classname, "func_", 5) || !Q_strcmp (classname, "info_teleport_destination") || !Q_strncmp (classname, "trigger_", 8) || !Q_strncmp (classname, "path_", 5)) {
+					//ap_printf ("Freeing DM Spawn: %s (%i)\n", PR_GetString (ent->v.classname), NUM_FOR_EDICT (ent));
+					remove_after[remove_array_index] = ent;
+					remove_array_index++;
+					continue;
+				}
+				//else ap_printf ("DM Spawn: %s (%i): %i\n", PR_GetString (ent->v.classname), NUM_FOR_EDICT (ent), (int)ent->v.spawnflags);
+			}
+			// Always continue with items/weapons even if the skill requirement is not met
+			else if ((!strncmp (PR_GetString (ent->v.classname), "item_", 5) || !strncmp (PR_GetString (ent->v.classname), "weapon_", 7)))
+			{
+				//ap_printf ("Spawned consistent: %s (%i): %i\n", PR_GetString (ent->v.classname), NUM_FOR_EDICT(ent), (int)ent->v.spawnflags);
+				//ap_printf ("Not Easy:%i Not Medium:%i Not Hard:%i\n", ((int)ent->v.spawnflags & SPAWNFLAG_NOT_EASY), ((int)ent->v.spawnflags & SPAWNFLAG_NOT_MEDIUM), ((int)ent->v.spawnflags & SPAWNFLAG_NOT_HARD));
+			}
+			else 
+			{
+				// Make monsters etc. adhere to skill level 
+				if (!Q_strncmp (classname, "func_", 5) || !Q_strncmp (classname, "monster_", 8)  || !Q_strncmp (classname, "trap_", 5) || !Q_strncmp (classname, "path_", 5)) {
+					//ap_printf ("Skill level mismatch spawn removed %s (%i) %f\n", PR_GetString (ent->v.classname), NUM_FOR_EDICT (ent), ent->v.spawnflags);
+					remove_after[remove_array_index] = ent;
+					remove_array_index++;
+					continue;
+				}
+				//else ap_printf ("Skill level mismatch spawn enforced %s (%i)\n", PR_GetString (ent->v.classname), NUM_FOR_EDICT (ent));
+			}
+		}
+		// always remove func_bossgate
+		else if (!Q_strcmp(classname, "func_bossgate")) {
+				remove_after[remove_array_index] = ent;
+				remove_array_index++;
+				continue;
 		}
 
 		// remove monsters if nomonsters is set
@@ -1560,30 +1594,53 @@ void ED_LoadFromFile (const char *data)
 //
 	// look for the spawn function
 		
-		// TODO: AP toggle
 		// [ap] Overwrite spawn function of items and weapons with ap models
 		if (!strncmp (PR_GetString (ent->v.classname), "item_", 5) || !strncmp (PR_GetString (ent->v.classname), "weapon_", 7))
 		{
 			ap_item_count += 1;
-			func = ED_FindFunction ("item_ap");
-			// [ap] offset ent origin in case of .bsp models
+			ED_Print_JSON (ent, ap_item_count);
+			uint64_t loc_hash = 0;
+			loc_hash = generate_hash (ent->v.origin[0], ent->v.origin[1], ent->v.origin[2], PR_GetString (ent->v.classname));
+
+			// [ap] offset edict origin for .bsp models
+			// TODO: Might need some tweaking
 			if (!strcmp (PR_GetString (ent->v.classname), "item_shells") || !strcmp (PR_GetString (ent->v.classname), "item_spikes")
 				|| !strcmp (PR_GetString (ent->v.classname), "item_rockets") || !strcmp (PR_GetString (ent->v.classname), "item_cells")
 				|| !strcmp (PR_GetString (ent->v.classname), "item_health"))
 			{
-				ent->v.origin[0] += 10;
-				ent->v.origin[1] += 10;
+				ent->v.origin[0] += 16;
+				ent->v.origin[1] += 16;
 			}
-			ED_Print_JSON (ent);
+
+			int do_replace = ap_replace_edict (loc_hash, "items");
+			if(AP_DEBUG_SPAWN) do_replace = 1;
+			if (do_replace == 0) {
+				ap_printfd ("Freeing edict (not present in apworld): %s (%i)\n", PR_GetString (ent->v.classname), NUM_FOR_EDICT (ent));
+				func = ED_FindFunction (classname);
+				remove_after[remove_array_index] = ent;
+				remove_array_index++;
+			}
+			else if (do_replace == 2) 
+				func = ED_FindFunction ("item_ap_prog");
+			else 
+				func = ED_FindFunction ("item_ap");
+
+			// Make sure to free already collected edicts
+			
+			if (ap_free_collected_edicts (loc_hash, "items")) {
+				//ap_printfd ("Marking collected edict %s (%i)\n", PR_GetString (ent->v.classname), ap_item_count);
+				remove_after[remove_array_index] = ent;
+				remove_array_index++;
+			}
 		}
 		else if (!strcmp (PR_GetString (ent->v.classname), "trigger_secret"))
 		{
-			ED_Print_JSON (ent);
+			ap_item_count += 1;
 			func = ED_FindFunction (classname);
 		}
 		else if (!strcmp (PR_GetString (ent->v.classname), "trigger_changelevel"))
 		{
-			ED_Print_JSON (ent);
+			ap_item_count += 1;
 			func = ED_FindFunction (classname);
 		}
 		else
@@ -1603,9 +1660,31 @@ void ED_LoadFromFile (const char *data)
 
 		pr_global_struct->self = EDICT_TO_PROG(ent);
 		PR_ExecuteProgram (func - qcvm->functions);
+		// check this data after spawn
+		if (!strcmp (PR_GetString (ent->v.classname), "trigger_secret") || !strcmp (PR_GetString (ent->v.classname), "trigger_changelevel")) {
+			ED_Print_JSON (ent, ap_item_count);
+			// Make sure to free already collected edicts
+			uint64_t loc_hash = generate_hash (ent->v.absmax[0], ent->v.absmax[1], ent->v.absmax[2], PR_GetString (ent->v.classname));
+			if (ap_free_collected_edicts (loc_hash, "secrets")) {
+				//ap_printfd ("Marking collected secret %s (%i)\n", PR_GetString (ent->v.classname), ap_item_count);
+				remove_after[remove_array_index] = ent;
+				remove_array_index++;
+			}
+			else if (ap_free_collected_edicts (loc_hash, "exits")) {
+				remove_after[remove_array_index] = ent;
+				remove_array_index++;
+			}
+		}
 	}
-
+	ap_printfd ("Load from file finished.\n\n");
 	Con_DPrintf ("%i entities inhibited\n", inhibit);
+
+	// [ap] remove entities that don't belong to the current skill
+	for (int i = 0; i < remove_array_index; i++) {
+		edict_t* remove_ent = (edict_t*)remove_after[i];
+		//ap_printfd ("Removing after: %s (%i) %f\n", PR_GetString (remove_ent->v.classname),NUM_FOR_EDICT (remove_ent), remove_ent->v.spawnflags);
+		ED_Free (remove_ent);
+	}
 }
 
 void PR_UnzoneAll(void)
@@ -2578,7 +2657,14 @@ void SaveData_Fill (savedata_t *save)
 void SaveData_WriteHeader (savedata_t *save)
 {
 	int i;
-
+	// [ap] Add AP datastorage uuid
+	char ap_seed[64] = "";
+	const char* savedata_name = ap_get_savedata_name ();
+	if (AP_HOOK) {
+		strncpy (ap_seed, savedata_name, sizeof (ap_seed) - 1);
+		ap_seed[sizeof (ap_seed) - 1] = '\0';
+	}
+	fprintf (save->file, "%s\n", ap_seed);
 	fprintf (save->file, "%i\n", SAVEGAME_VERSION);
 	fprintf (save->file, "%s\n", save->comment);
 
@@ -2595,27 +2681,10 @@ void SaveData_WriteHeader (savedata_t *save)
 	ED_WriteGlobals (save);
 }
 
-// [ap] Funcs for printing
-// [ap] Structure to hold a string and its count
-typedef struct {
-	char str[50];
-	int count;
-} StringCount;
-StringCount stringCounts[30];
-int numStrings = 0;
-int count = 0;
-// Function to find the index of a string in the array
-int findString (StringCount stringCounts[], int size, char* str) {
-	for (int i = 0; i < size; i++) {
-		if (strcmp (stringCounts[i].str, str) == 0) {
-			return i;
-		}
-	}
-	return -1;
-}
 // [ap] Print edicts in json style format for exporting
-void ED_Print_JSON (edict_t* ed)
+void ED_Print_JSON (edict_t* ed, int ap_item_count)
 {
+
 	ddef_t* d;
 	int* v;
 	int		i, j, l;
@@ -2626,14 +2695,17 @@ void ED_Print_JSON (edict_t* ed)
 	char* itemname = "";
 	char* classname = "";
 	char* spawnflags = "0.0";
+	char* origin = "";
+
+	if (!AP_DEBUG) return;
 
 	if (ed->free)
 	{
-		Con_Printf ("FREE\n");
+		Con_SafePrintf ("FREE\n");
 		return;
 	}
-
-	Con_SafePrintf ("{\"id\": %i, ", NUM_FOR_EDICT (ed));
+	//id = NUM_FOR_EDICT (ed);
+	Con_SafePrintf ("{\"id\": %i, ", ap_item_count);
 	for (i = 1; i < qcvm->progs->numfielddefs; i++)
 	{
 		d = &qcvm->fielddefs[i];
@@ -2661,23 +2733,18 @@ void ED_Print_JSON (edict_t* ed)
 			copy = (char*)Z_Strdup (PR_ValueString (d->type, (eval_t*)v));
 
 			if (!strcmp (copy, "item_artifact_super_damage")) {
-				//Con_SafePrintf("\"name\": \"Quad Damage (%i)\", ",count);
 				itemname = "Quad Damage";
 			}
 			else if (!strcmp (copy, "item_artifact_envirosuit")) {
-				//Con_SafePrintf("\"name\": \"Biosuit (%i)\", ",count);
 				itemname = "Biosuit";
 			}
 			else if (!strcmp (copy, "trigger_changelevel")) {
-				//Con_SafePrintf("\"name\": \"Exit\", ");
 				itemname = "Exit";
 			}
 			else if (!strcmp (copy, "item_key1")) {
-				//Con_SafePrintf("\"name\": \"Silver Key\", ");
 				itemname = "Silver Key";
 			}
 			else if (!strcmp (copy, "item_key2")) {
-				//Con_SafePrintf("\"name\": \"Gold Key\", ");
 				itemname = "Gold Key";
 			}
 			else if (!strcmp (copy, "item_armor1")) {
@@ -2694,25 +2761,18 @@ void ED_Print_JSON (edict_t* ed)
 				token = strtok (NULL, "_");
 				if (!strcmp (token, "artifact")) token = strtok (NULL, "_");
 				if (islower (token[0])) token[0] = toupper (token[0]);
-				//Con_SafePrintf("\"name\": \"%s (%i)\", ", token, count);
 				itemname = (char*)Z_Strdup (token);
 			}
 
 			Z_Free (copy);
-			//Con_SafePrintf("\"%s\": ", name);
-			//Con_SafePrintf("\"%s\", ", PR_ValueString(d->type, (eval_t*)v));
 
 		}
 		else if (!strcmp (name, "spawnflags") && !spawnflags_printed) {
-			//Con_SafePrintf("\"%s\": ", name);
-			//Con_SafePrintf("%s, ", PR_ValueString(d->type, (eval_t*)v));
 			spawnflags = (char*)Z_Strdup (PR_ValueString (d->type, (eval_t*)v));
 			spawnflags_printed = true;
 		}
 	}
 
-
-	//if (!spawnflags_printed) Con_SafePrintf("\"spawnflags\": 0.0, ");
 	if (!spawnflags_printed) spawnflags = "0.0";
 	// Handle different health types
 	if (!strcmp (classname, "item_health")) {
@@ -2722,22 +2782,136 @@ void ED_Print_JSON (edict_t* ed)
 		else if (spawnflags_i & 2) itemname = "Megahealth";
 		else itemname = "Large Medkit";
 	}
-	int index = findString (stringCounts, numStrings, itemname);
-	if (index != -1) {
-		// Increment the count if found
-		stringCounts[index].count++;
-		count = stringCounts[index].count;
+
+	if (!strcmp (itemname, "Exit")) Con_SafePrintf ("\"name\": \"%s\", ", itemname);
+	else Con_SafePrintf ("\"name\": \"%s (%i)\", ", itemname, ap_item_count);
+	Con_SafePrintf ("\"classname\": \"%s\", ", classname);
+	//Con_SafePrintf ("\"spawnflags\": %s, ", spawnflags);
+
+	//TODO: REMOVE
+	int buffer_size = strlen (itemname) + 10; // Estimate buffer size
+	char* formatted_string = (char*)malloc (buffer_size);
+	if (formatted_string == NULL) {
+		printf ("Memory allocation failed.\n");
+	}
+	if (formatted_string) sprintf (formatted_string, "%s (%i)", itemname, ap_item_count);
+	// REMOVE END
+	if (!strcmp(classname, "trigger_secret") || !strcmp (classname, "trigger_changelevel")) {
+		//Con_SafePrintf ("\"x\": %f,", ed->v.absmax[0]);
+		//Con_SafePrintf ("\"y\": %f, ", ed->v.absmax[1]);
+		//Con_SafePrintf ("\"z\": %f, ", ed->v.absmax[2]);
+		Con_SafePrintf("\"uuid\": %zu, ",generate_hash (ed->v.absmax[0], ed->v.absmax[1], ed->v.absmax[2], classname));
+		if (AP_DEBUG_SPAWN) ap_debug_add_edict_to_lut (generate_hash (ed->v.absmax[0], ed->v.absmax[1], ed->v.absmax[2], classname), formatted_string);
 	}
 	else {
-		// Add a new entry if not found
-		strcpy (stringCounts[numStrings].str, itemname);
-		stringCounts[numStrings].count = 1;
-		numStrings++;
-		count = 1;
+		//Con_SafePrintf ("\"x\": %f, ", ed->v.origin[0]);
+		//Con_SafePrintf ("\"y\": %f, ", ed->v.origin[1]);
+		//Con_SafePrintf ("\"z\": %f, ", ed->v.origin[2]);
+		Con_SafePrintf ("\"uuid\": %zu, ", generate_hash (ed->v.origin[0], ed->v.origin[1], ed->v.origin[2], classname));
+		if (AP_DEBUG_SPAWN) ap_debug_add_edict_to_lut (generate_hash (ed->v.origin[0], ed->v.origin[1], ed->v.origin[2], classname), formatted_string);
 	}
-	Con_SafePrintf ("\"name\": \"%s (%i)\", ", itemname, count);
-	Con_SafePrintf ("\"classname\": \"%s\", ", classname);
-	Con_SafePrintf ("\"spawnflags\": %s, ", spawnflags);
+	
 	Con_SafePrintf ("\"density\": 0},\n");
+	return;
+}
 
+char* GetClassname_APFormat (edict_t* ed)
+{
+	ddef_t* d;
+	int* v;
+	int		i, j, l;
+	const char* name;
+	int		type;
+
+	qboolean spawnflags_printed = false;
+	char* itemname = "";
+	char* classname = "";
+	char* spawnflags = "0.0";
+	int id;
+
+	if (ed->free)
+	{
+		Con_Printf ("FREE\n");
+		return "free";
+	}
+	id = NUM_FOR_EDICT (ed);
+
+	for (i = 1; i < qcvm->progs->numfielddefs; i++)
+	{
+		d = &qcvm->fielddefs[i];
+		name = PR_GetString (d->s_name);
+		l = strlen (name);
+		if (l > 1 && name[l - 2] == '_')
+			continue;	// skip _x, _y, _z vars
+
+		v = (int*)((char*)&ed->v + d->ofs * 4);
+
+		// if the value is still all 0, skip the field
+		type = d->type & ~DEF_SAVEGLOBAL;
+
+		for (j = 0; j < type_size[type]; j++)
+		{
+			if (v[j])
+				break;
+		}
+		if (j == type_size[type])
+			continue;
+		if (!strcmp (name, "classname")) {
+			char* copy;
+			char* token;
+			classname = (char*)Z_Strdup (PR_ValueString (d->type, (eval_t*)v));
+			copy = (char*)Z_Strdup (PR_ValueString (d->type, (eval_t*)v));
+
+			if (!strcmp (copy, "item_artifact_super_damage")) {
+				itemname = "Quad Damage";
+			}
+			else if (!strcmp (copy, "item_artifact_envirosuit")) {
+				itemname = "Biosuit";
+			}
+			else if (!strcmp (copy, "trigger_changelevel")) {
+				itemname = "Exit";
+			}
+			else if (!strcmp (copy, "item_key1")) {
+				itemname = "Silver Key";
+			}
+			else if (!strcmp (copy, "item_key2")) {
+				itemname = "Gold Key";
+			}
+			else if (!strcmp (copy, "item_armor1")) {
+				itemname = "Green Armor";
+			}
+			else if (!strcmp (copy, "item_armor2")) {
+				itemname = "Yellow Armor";
+			}
+			else if (!strcmp (copy, "item_armorInv")) {
+				itemname = "Red Armor";
+			}
+			else {
+				token = strtok (copy, "_");
+				token = strtok (NULL, "_");
+				if (!strcmp (token, "artifact")) token = strtok (NULL, "_");
+				if (islower (token[0])) token[0] = toupper (token[0]);
+				itemname = (char*)Z_Strdup (token);
+			}
+
+			Z_Free (copy);
+
+		}
+		else if (!strcmp (name, "spawnflags") && !spawnflags_printed) {
+			spawnflags = (char*)Z_Strdup (PR_ValueString (d->type, (eval_t*)v));
+			spawnflags_printed = true;
+		}
+	}
+
+	if (!spawnflags_printed) spawnflags = "0.0";
+	// Handle different health types
+	if (!strcmp (classname, "item_health")) {
+		float spawnflags_f = strtof (spawnflags, NULL);
+		int spawnflags_i = (int)spawnflags_f;
+		if (spawnflags_i & 1) itemname = "Small Medkit";
+		else if (spawnflags_i & 2) itemname = "Megahealth";
+		else itemname = "Large Medkit";
+	}
+
+	return itemname;
 }

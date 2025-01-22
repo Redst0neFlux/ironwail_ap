@@ -79,6 +79,7 @@ Tab key down
 */
 void Sbar_ShowScores (void)
 {
+	ap_scoreboard = true;
 	if (sb_showscores)
 		return;
 	sb_showscores = true;
@@ -94,6 +95,7 @@ Tab key up
 */
 void Sbar_DontShowScores (void)
 {
+	ap_scoreboard = false;
 	sb_showscores = false;
 	sb_updates = 0;
 }

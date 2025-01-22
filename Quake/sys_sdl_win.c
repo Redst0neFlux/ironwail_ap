@@ -946,8 +946,8 @@ void Sys_Init (void)
 	if (host_parms->numcpus < 1)
 		host_parms->numcpus = 1;
 	Sys_Printf("Detected %d CPUs.\n", host_parms->numcpus);
-
-	if (isDedicated)
+	
+	if (isDedicated || AP_HOOK)
 	{
 		if (!AllocConsole ())
 		{
@@ -1064,7 +1064,7 @@ void Sys_Quit (void)
 {
 	Host_Shutdown();
 
-	if (isDedicated)
+	if (isDedicated || AP_HOOK)
 		FreeConsole ();
 
 	exit (0);

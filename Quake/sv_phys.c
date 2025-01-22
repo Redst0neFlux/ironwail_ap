@@ -123,7 +123,7 @@ Returns false if the entity removed itself.
 qboolean SV_RunThink (edict_t *ent)
 {
 	float	thinktime;
-
+	
 	thinktime = ent->v.nextthink;
 	if (thinktime <= 0 || thinktime > qcvm->time + host_frametime)
 		return true;
@@ -165,7 +165,7 @@ void SV_Impact (edict_t *e1, edict_t *e2)
 		pr_global_struct->self = EDICT_TO_PROG(e1);
 		pr_global_struct->other = EDICT_TO_PROG(e2);
 		if (!strcmp (PR_GetString (e1->v.classname), "player")) { 
-			Con_SafePrintf ("sv_impact E1 Touch of %s and %s\n", PR_GetString (e1->v.classname), PR_GetString (e2->v.classname));
+			Con_DPrintf ("sv_impact E1 Touch of %s and %s\n", PR_GetString (e1->v.classname), PR_GetString (e2->v.classname));
 			//ED_Print (e2);
 		}
 		PR_ExecuteProgram (e1->v.touch);
@@ -176,7 +176,7 @@ void SV_Impact (edict_t *e1, edict_t *e2)
 		pr_global_struct->self = EDICT_TO_PROG(e2);
 		pr_global_struct->other = EDICT_TO_PROG(e1);
 		if (!strcmp (PR_GetString (e1->v.classname), "player")) { 
-			Con_SafePrintf ("sv_impact E2 Touch of %s and %s\n", PR_GetString (e1->v.classname), PR_GetString (e2->v.classname));
+			Con_DPrintf ("sv_impact E2 Touch of %s and %s\n", PR_GetString (e1->v.classname), PR_GetString (e2->v.classname));
 			//ED_Print (e2);
 		}
 		//[ap] dont execute door/button touch if door/button think is disabled
@@ -960,6 +960,108 @@ void SV_Physics_Client (edict_t	*ent, int num)
 
 	if ( ! svs.clients[num-1].active )
 		return;		// unconnected slot
+
+	// [ap] TODO: Maybe every ~10th tic instead?
+	ap_process_ingame_tic ();
+	if (sv_player && cls.signon == SIGNONS) {
+		// send latest messages
+		while (ap_message_pending ()) {
+			char* message = ap_get_latest_message ();
+			Con_SafePrintf (message);
+		}
+		// give inventory items
+		sv_player->v.items = (int)sv_player->v.items | ap_inventory_flags;
+
+		// give ammo
+		if (ap_give_ammo) {
+			sv_player->v.ammo_shells = (int)sv_player->v.ammo_shells + ap_give_ammo_arr[0];
+			sv_player->v.ammo_nails = (int)sv_player->v.ammo_nails + ap_give_ammo_arr[1];
+			sv_player->v.ammo_rockets = (int)sv_player->v.ammo_rockets + ap_give_ammo_arr[2];
+			sv_player->v.ammo_cells = (int)sv_player->v.ammo_cells + ap_give_ammo_arr[3];
+
+			ap_give_ammo = 0;
+		}
+
+		//clamp max ammo
+		if ((int)sv_player->v.ammo_shells > ap_max_ammo_arr[0]) {
+			sv_player->v.ammo_shells = ap_max_ammo_arr[0];
+			if (sv_player->v.weapon == IT_SHOTGUN || sv_player->v.weapon == IT_SUPER_SHOTGUN) sv_player->v.currentammo = sv_player->v.ammo_shells;
+		}
+		if ((int)sv_player->v.ammo_nails > ap_max_ammo_arr[1]) {
+			sv_player->v.ammo_nails = ap_max_ammo_arr[1];
+			if (sv_player->v.weapon == IT_NAILGUN || sv_player->v.weapon == IT_SUPER_NAILGUN) sv_player->v.currentammo = sv_player->v.ammo_nails;
+		}
+		if ((int)sv_player->v.ammo_rockets > ap_max_ammo_arr[2]) {
+			sv_player->v.ammo_rockets = ap_max_ammo_arr[2];
+			if (sv_player->v.weapon == IT_ROCKET_LAUNCHER || sv_player->v.weapon == IT_GRENADE_LAUNCHER) sv_player->v.currentammo = sv_player->v.ammo_rockets;
+		}
+		if ((int)sv_player->v.ammo_cells > ap_max_ammo_arr[3]) {
+			sv_player->v.ammo_cells = ap_max_ammo_arr[3];
+			if (sv_player->v.weapon == IT_LIGHTNING) sv_player->v.currentammo = sv_player->v.ammo_cells;
+		}
+
+		// check inventory uses and refresh flags
+		eval_t* val;
+		int	v = ap_get_quakec_apflag (); // [ap] return quakec flag to be set
+		val = GetEdictFieldValueByName (sv_player, "ap_items");
+		if (val) val->_float = v;
+
+		val = GetEdictFieldValueByName (sv_player, "quad_uses");
+		ap_inv_arr[0] = (int)val->_float;
+
+		val = GetEdictFieldValueByName (sv_player, "invuln_uses");
+		ap_inv_arr[1] = (int)val->_float;
+
+		val = GetEdictFieldValueByName (sv_player, "bio_uses");
+		ap_inv_arr[2] = (int)val->_float;
+
+		val = GetEdictFieldValueByName (sv_player, "invis_uses");
+		ap_inv_arr[3] = (int)val->_float;
+
+		val = GetEdictFieldValueByName (sv_player, "backpack_uses");
+		ap_inv_arr[4] = (int)val->_float;
+
+		val = GetEdictFieldValueByName (sv_player, "medkit_uses");
+		ap_inv_arr[5] = (int)val->_float;
+
+		val = GetEdictFieldValueByName (sv_player, "armor_uses");
+		ap_inv_arr[6] = (int)val->_float;
+
+		// trigger_secret can be activated by other triggers
+		// this is not checked in C code so I hooked into QuakeC
+		val = GetEdictFieldValueByName (sv_player, "new_secret");
+		//Con_SafePrintf ("%f", val->vector[0]);
+		if (val->_float > 0) {
+			val->_float = 0.0;
+			val = GetEdictFieldValueByName (sv_player, "secret_coords");
+			uint64_t loc_hash = generate_hash (val->vector[0], val->vector[1], val->vector[2], "trigger_secret");
+			if (!AP_DEBUG_SPAWN) AP_CheckLocation (loc_hash, "secrets");
+			else add_touched_edict (loc_hash, "secrets");
+			//Con_SafePrintf ("Secret %zu triggered at %f %f %f\n", loc_hash, val->vector[0], val->vector[1], val->vector[2]);
+		}
+
+
+
+		// check for active health/death traps
+		
+		if (ap_active_traps[0]) {
+			SV_StartSound (sv_player, 0, "player/pain2.wav", 255, 1);
+			sv_player->v.health = 20;
+		}
+		if (ap_active_traps[1]) {
+			Cbuf_AddText ("sv_autload 0");
+			Cbuf_Execute ();
+			SV_StartSound (sv_player, 0, "player/pain5.wav", 255, 1);
+			Cbuf_AddText ("kill");
+			Cbuf_Execute ();
+			ap_fresh_map = 1;
+		}
+		// check if we have killed shub and send the changelevel item
+		if (CL_InCutscene () && !strcmp (sv.name, "end"))
+			AP_CheckLocation (1717686674820885145, "exits");
+	}
+	
+	
 
 //
 // call standard client pre-think

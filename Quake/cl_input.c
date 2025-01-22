@@ -57,6 +57,8 @@ kbutton_t	in_left, in_right, in_forward, in_back;
 kbutton_t	in_lookup, in_lookdown, in_moveleft, in_moveright;
 kbutton_t	in_strafe, in_speed, in_use, in_jump, in_attack;
 kbutton_t	in_up, in_down;
+// [ap]
+kbutton_t	in_automap;
 
 int			in_impulse;
 
@@ -176,6 +178,84 @@ void IN_JumpDown (void) {KeyDown(&in_jump);}
 void IN_JumpUp (void) {KeyUp(&in_jump);}
 
 void IN_Impulse (void) {in_impulse=Q_atoi(Cmd_Argv(1));}
+
+// [ap] automap toggle and other cmds
+void IN_Automap (void) {
+	if (!ap_can_automap(sv.name)) {
+		Con_SafePrintf ("No Automap for map %s\n", sv.name);
+		return;
+	}
+	cvar_t* showbb;
+	showbb = Cvar_FindVar ("r_showbboxes");
+	if (showbb->value) {
+		Cvar_SetQuick (showbb, "0");
+		Cbuf_AddText ("r_showbboxes_filter_clear\n");
+		Con_SafePrintf ("Automap off\n");
+	}
+	else {
+		//clear filter
+		Cbuf_AddText ("r_showbboxes_filter_clear\n");
+		//adjust filter
+		//if (AP_DEBUG) Cbuf_AddText ("r_showbboxes_filter item_ weapon_ trigger_secret trigger_changelevel\n");
+		//else Cbuf_AddText ("r_showbboxes_filter item_ weapon_\n");
+		Cbuf_AddText ("r_showbboxes_filter item_ weapon_ trigger_secret trigger_changelevel\n");
+		//enable bboxes
+		Cvar_SetQuick (showbb, "1");
+		Con_SafePrintf ("Automap on\n");
+	}
+}
+
+void IN_ClearEdictList (void) {
+	clear_touched_edict_list ();
+}
+
+void IN_DebugDive (void) {
+	ap_debug_dive = !ap_debug_dive;
+}
+
+void IN_DebugJump (void) {
+	ap_debug_jump = !ap_debug_jump;
+}
+
+void IN_DebugRun (void) {
+	ap_debug_run = !ap_debug_run;
+}
+
+void IN_DebugButton (void) {
+	ap_debug_button = !ap_debug_button;
+}
+
+void IN_DebugDoor (void) {
+	ap_debug_door = !ap_debug_door;
+}
+
+void IN_DebugGSaver (void) {
+	ap_debug_grenadesaver = !ap_debug_grenadesaver;
+}
+
+void IN_DebugRSaver (void) {
+	ap_debug_rocketsaver = !ap_debug_rocketsaver;
+}
+
+void IN_DebugRJ (void) {
+	ap_debug_rocketjump = !ap_debug_rocketjump;
+}
+
+void IN_DebugGJ (void) {
+	ap_debug_grenadejump = !ap_debug_grenadejump;
+}
+
+void IN_DebugShootSwitch (void) {
+	ap_debug_shootswitch = !ap_debug_shootswitch;
+}
+
+void IN_DebugSilverKey (void) {
+	sv_player->v.items = (int)sv_player->v.items ^ 131072;
+}
+
+void IN_DebugGoldKey (void) {
+	sv_player->v.items = (int)sv_player->v.items ^ 262144;
+}
 
 /*
 ===============
@@ -365,7 +445,9 @@ void CL_BaseMove (usercmd_t *cmd)
 //
 // adjust for speed key
 //
-	if ((in_speed.state & 1) ^ (cl_alwaysrun.value != 0.0))
+	// [ap] block run
+	// TODO: also apply speed modifier this to airstrafe etc for a bigger impact
+	if (((in_speed.state & 1) ^ (cl_alwaysrun.value != 0.0)) && ap_can_run())
 	{
 		cmd->forwardmove *= cl_movespeedkey.value;
 		cmd->sidemove *= cl_movespeedkey.value;
@@ -373,7 +455,7 @@ void CL_BaseMove (usercmd_t *cmd)
 	}
 }
 
-
+int ap_jumptrap_toggle = 0;
 /*
 ==============
 CL_SendMove
@@ -421,9 +503,21 @@ void CL_SendMove (const usercmd_t *cmd)
 		if ( in_attack.state & 3 )
 			bits |= 1;
 		in_attack.state &= ~2;
-
-		if (in_jump.state & 3)
+		// [ap] block jump input and handle jump trap
+		if (ap_active_traps[4] && ap_can_jump ()) {
+			if (ap_jumptrap_toggle) {
+				bits &= 2;
+				ap_jumptrap_toggle = 0;
+			}
+			else {
+				bits |= 2;
+				ap_jumptrap_toggle = 1;
+			}
+		}
+		else if ((in_jump.state & 3) && ap_can_jump ()) {
 			bits |= 2;
+		}
+			
 		in_jump.state &= ~2;
 
 		MSG_WriteByte (&buf, bits);
@@ -494,6 +588,22 @@ void CL_InitInput (void)
 	Cmd_AddCommand ("-klook", IN_KLookUp);
 	Cmd_AddCommand ("+mlook", IN_MLookDown);
 	Cmd_AddCommand ("-mlook", IN_MLookUp);
-
+	// [ap] add new keybinds
+	Cmd_AddCommand ("automap", IN_Automap);
+	if (AP_DEBUG) Cmd_AddCommand ("clear_edictlist", IN_ClearEdictList);
+	if (AP_DEBUG_SPAWN) {
+		Cmd_AddCommand ("ap_debug_dive", IN_DebugDive);
+		Cmd_AddCommand ("ap_debug_jump", IN_DebugJump);
+		Cmd_AddCommand ("ap_debug_run", IN_DebugRun);
+		Cmd_AddCommand ("ap_debug_button", IN_DebugButton);
+		Cmd_AddCommand ("ap_debug_door", IN_DebugDoor);
+		Cmd_AddCommand ("ap_debug_grenadesaver", IN_DebugGSaver);
+		Cmd_AddCommand ("ap_debug_rocketsaver", IN_DebugRSaver);
+		Cmd_AddCommand ("ap_debug_rocketjump", IN_DebugRJ);
+		Cmd_AddCommand ("ap_debug_grenadejump", IN_DebugGJ);
+		Cmd_AddCommand ("ap_debug_shootswitch", IN_DebugShootSwitch);
+		Cmd_AddCommand ("ap_debug_goldkey", IN_DebugGoldKey);
+		Cmd_AddCommand ("ap_debug_silverkey", IN_DebugSilverKey);
+	}
 }
 

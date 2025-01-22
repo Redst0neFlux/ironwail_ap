@@ -693,7 +693,8 @@ void IN_MouseMotion(int dx, int dy)
 {
 	if (!windowhasfocus)
 		dx = dy = 0;	//don't change view angles etc while unfocused.
-	if (cls.state != ca_connected || cls.signon != SIGNONS || key_dest != key_game || CL_InCutscene ())
+	// [ap] mouse trap
+	if (cls.state != ca_connected || cls.signon != SIGNONS || key_dest != key_game || CL_InCutscene () || ap_active_traps[2])
 	{
 		total_dx = 0;
 		total_dy = 0;

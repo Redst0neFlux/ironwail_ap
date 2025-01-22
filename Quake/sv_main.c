@@ -1940,7 +1940,7 @@ void SV_SpawnServer (const char *server)
 		current_skill = 0;
 	if (current_skill > 3)
 		current_skill = 3;
-	// [ap] TODO: Set appropriate skill level on spawn here
+
 	Cvar_SetValue ("skill", (float)current_skill);
 
 //
@@ -2044,6 +2044,9 @@ void SV_SpawnServer (const char *server)
 
 // serverflags are for cross level information (sigils)
 	pr_global_struct->serverflags = svs.serverflags;
+
+	// [ap]
+	ap_on_map_load (sv.name);
 
 	ED_LoadFromFile (sv.worldmodel->entities);
 

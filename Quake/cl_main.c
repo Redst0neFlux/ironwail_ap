@@ -636,9 +636,9 @@ void CL_RelinkEntities (void)
 			//johnfitz
 		}
 		//[ap] Hooking into this to give ap items a dyn light
-		if (ent->effects & EF_BRIGHTLIGHT || !strcmp (ent->model->name, "progs/ap-logo.mdl"))
+		if (ent->effects & EF_BRIGHTLIGHT || !strcmp (ent->model->name, "progs/ap-logo.mdl") || !strcmp (ent->model->name, "progs/ap-logo-prog.mdl"))
 		{
-			if (!strcmp (ent->model->name, "progs/ap-logo.mdl"))
+			if (!strcmp (ent->model->name, "progs/ap-logo.mdl") || !strcmp (ent->model->name, "progs/ap-logo-prog.mdl"))
 			{
 				// create a dynamic light with a smaller than usual radius
 				dl = CL_AllocDlight (i);

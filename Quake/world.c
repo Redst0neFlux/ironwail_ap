@@ -296,6 +296,10 @@ SV_AreaTriggerEdicts ( edict_t *ent, areanode_t *node, edict_t **list, int *list
 		touch = EDICT_FROM_AREA(l);
 		if (touch == ent)
 			continue;
+		// TODO: Is this needed?
+		// [ap] check for free
+		if (touch->free)
+			continue;
 		if (!touch->v.touch || touch->v.solid != SOLID_TRIGGER)
 			continue;
 		if (ent->v.absmin[0] > touch->v.absmax[0]
@@ -309,53 +313,57 @@ SV_AreaTriggerEdicts ( edict_t *ent, areanode_t *node, edict_t **list, int *list
 		if (*listcount == listspace)
 			return; // should never happen
 
-		// TODO: Handle sending collected items to server
 		// [ap] hook into player func when items/weapons are touched
+		
 		if (!strncmp (PR_GetString (ent->v.classname), "player", 6) && (!strncmp (PR_GetString (touch->v.classname), "item_", 5) || !strncmp (PR_GetString (touch->v.classname), "weapon_", 7)))
 		{
-			Con_SafePrintf ("AP_LOCATION %s Touched %s (%i) \n", PR_GetString (ent->v.classname), PR_GetString (touch->v.classname), NUM_FOR_EDICT (touch));
-			//Con_SafePrintf("AP_LOCATION %s Touched %s (%i) \n", PR_GetString(ent->v.classname), PR_GetString(touch->v.classname), NUM_FOR_EDICT(touch), touch->v.origin[0], touch->v.origin[1], touch->v.origin[2]);
+			char* classname = GetClassname_APFormat (touch);
+			uint64_t loc_hash = 0;
+			Con_DPrintf ("AP_LOCATION Touched %s (%i) \n", classname, NUM_FOR_EDICT (touch));
+			if (!strcmp (PR_GetString (touch->v.classname), "item_shells") || !strcmp (PR_GetString (touch->v.classname), "item_spikes")
+				|| !strcmp (PR_GetString (touch->v.classname), "item_rockets") || !strcmp (PR_GetString (touch->v.classname), "item_cells")
+				|| !strcmp (PR_GetString (touch->v.classname), "item_health"))
+			{
+				loc_hash = generate_hash (touch->baseline.origin[0] - 16, touch->baseline.origin[1] - 16, touch->baseline.origin[2], PR_GetString (touch->v.classname));
+			}
+			else 
+				loc_hash = generate_hash (touch->baseline.origin[0], touch->baseline.origin[1], touch->baseline.origin[2], PR_GetString (touch->v.classname));
+			if (!AP_DEBUG_SPAWN) AP_CheckLocation (loc_hash, "items");
+			else add_touched_edict (loc_hash, "items");
+			//Con_DPrintf("AP_LOCATION %s Touched %s (%i) \n", PR_GetString(ent->v.classname), PR_GetString(touch->v.classname), NUM_FOR_EDICT(touch), touch->v.origin[0], touch->v.origin[1], touch->v.origin[2]);
 		}
 		// [ap] hook into player func when secret sectors are touched
+		// TODO: this is now done in sv_phys, remove here if no bugs
 		else if (!strncmp (PR_GetString (ent->v.classname), "player", 6) && (!strncmp (PR_GetString (touch->v.classname), "trigger_secret", 14)))
 		{
-			Con_SafePrintf ("AP_SECRET Ent %s Touched %s (%i)\n", PR_GetString (ent->v.classname), PR_GetString (touch->v.classname), NUM_FOR_EDICT (touch));
-			//Con_SafePrintf("AP_SECRET Ent %s Touched %s (%i) at %f %f %f\n", PR_GetString(ent->v.classname), PR_GetString(touch->v.classname), NUM_FOR_EDICT(touch), touch->v.origin[0], touch->v.origin[1], touch->v.origin[2]);
+			// TODO: Remove this code, now handled in QuakeC
+			//Con_DPrintf ("AP_SECRET Touched %s (%i)\n", PR_GetString (touch->v.classname), NUM_FOR_EDICT (touch));
+			/*uint64_t loc_hash = generate_hash (touch->v.absmax[0], touch->v.absmax[1], touch->v.absmax[2], PR_GetString (touch->v.classname));
+			if (!AP_DEBUG_SPAWN) AP_CheckLocation (loc_hash, "secrets");
+			else add_touched_edict (loc_hash, "secrets");*/
+
 			//PR_ExecuteProgram(touch->v.touch);
 			//ED_Free(touch);
 		}
 		// [ap] hook into player func when exit sectors are touched
 		else if (!strncmp (PR_GetString (ent->v.classname), "player", 6) && (!strncmp (PR_GetString (touch->v.classname), "trigger_changelevel", 19)))
 		{
-			Con_SafePrintf ("AP_EXIT Ent %s Touched %s (%i)\n", PR_GetString (ent->v.classname), PR_GetString (touch->v.classname), NUM_FOR_EDICT (touch));
+			//Con_DPrintf ("AP_EXIT Touched %s (%i)\n", PR_GetString (touch->v.classname), NUM_FOR_EDICT (touch));
+			uint64_t loc_hash = generate_hash (touch->v.absmax[0], touch->v.absmax[1], touch->v.absmax[2], PR_GetString (touch->v.classname));
+			if (!AP_DEBUG_SPAWN) AP_CheckLocation (loc_hash, "exits");
+			else add_touched_edict (loc_hash, "exits");
 		}
-		else if (!strncmp (PR_GetString (ent->v.classname), "player", 6) && !strncmp(PR_GetString (touch->v.classname), "trigger",7))
+		else if (!strncmp (PR_GetString (ent->v.classname), "player", 6) && !strncmp (PR_GetString (touch->v.classname), "trigger", 7))
 		{
-			Con_SafePrintf("NON_AP Trigger %s Touched %s (%i) at %f %f %f\n", PR_GetString(ent->v.classname), PR_GetString(touch->v.classname), NUM_FOR_EDICT(touch), touch->v.origin[0], touch->v.origin[1], touch->v.origin[2]);
-			//[ap] handle triggers that link to doors
-			//ED_Print (touch);
-			//PR_ExecuteProgram(touch->v.touch);
-			// Find outgoing links (entity field references other than .chain)
-			
-			//TODO: the following loop is potentially useless here
-			/*
-			int i = 0;
-			edict_t* ed;
-			for (i = 0; i < qcvm->numentityfields; i++)
-			{
-				eval_t* val = (eval_t*)((char*)&touch->v + qcvm->entityfieldofs[i]);
-				if (qcvm->entityfieldofs[i] == offsetof (entvars_t, chain) || !val->edict)
-					continue;
-				ed = PROG_TO_EDICT (val->edict);
-				if (ed == touch || ed->free || ed == sv_player)
-					continue;
-				Con_SafePrintf ("TRIGGER LINKED TO %s\n", PR_GetString (ed->v.classname));
-			}*/
+			Con_DPrintf ("NON_AP Trigger %s Touched %s (%i) at %f %f %f\n", PR_GetString (ent->v.classname), PR_GetString (touch->v.classname), NUM_FOR_EDICT (touch), touch->v.origin[0], touch->v.origin[1], touch->v.origin[2]);
 		}
 		else if (!strncmp (PR_GetString (ent->v.classname), "player", 6)) {
-			Con_SafePrintf ("NON_AP Ent %s Touched %s (%i) at %f %f %f\n", PR_GetString (ent->v.classname), PR_GetString (touch->v.classname), NUM_FOR_EDICT (touch), touch->v.origin[0], touch->v.origin[1], touch->v.origin[2]);
+			Con_DPrintf ("NON_AP Ent %s Touched %s (%i) at %f %f %f\n", PR_GetString (ent->v.classname), PR_GetString (touch->v.classname), NUM_FOR_EDICT (touch), touch->v.origin[0], touch->v.origin[1], touch->v.origin[2]);
 		}
-		PR_ExecuteProgram (touch->v.touch);
+		else if (!strncmp (PR_GetString (ent->v.classname), "player", 6) && !strncmp (PR_GetString (ent->v.classname), "path", 4)) {
+			//Con_DPrintf ("NON_AP Ent %s touching %s (%i)\n", PR_GetString (ent->v.classname), PR_GetString (touch->v.classname), NUM_FOR_EDICT (touch));
+		}
+		else PR_ExecuteProgram (touch->v.touch);
 		list[*listcount] = touch;
 		(*listcount)++;
 	}
@@ -387,7 +395,7 @@ void SV_TouchLinks (edict_t *ent)
 	int		old_self, old_other;
 	int		i, listcount;
 	int		mark;
-
+	
 	mark = Hunk_LowMark ();
 	list = (edict_t **) Hunk_AllocNoFill (qcvm->num_edicts*sizeof(edict_t *));
 
@@ -417,12 +425,11 @@ void SV_TouchLinks (edict_t *ent)
 		pr_global_struct->other = EDICT_TO_PROG(ent);
 		pr_global_struct->time = qcvm->time;
 		// [ap] check if the owner or target is a door, abort if no door opening allowed
-		if (!ap_can_door() && !strcmp (PR_GetString (ent->v.classname), "player")) {
-			
+		if (!ap_can_door () && !strcmp (PR_GetString (ent->v.classname), "player")) {
 			if (!strcmp (PR_GetString (touch->v.classname), "")) {
 				edict_t* touch_owner = PROG_TO_EDICT (touch->v.owner);
 				if (!strcmp (PR_GetString (touch_owner->v.classname), "door")) {
-					Con_SafePrintf ("%s linked touching %s\n", PR_GetString (touch_owner->v.classname), PR_GetString (ent->v.classname));
+					Con_DPrintf ("%s linked touching %s\n", PR_GetString (touch_owner->v.classname), PR_GetString (ent->v.classname));
 				}
 				else PR_ExecuteProgram (touch->v.touch);
 			}
@@ -441,6 +448,7 @@ void SV_TouchLinks (edict_t *ent)
 					if (ed == touch || ed->free || ed == sv_player)
 						continue;
 					door_link_found = true;
+					Con_DPrintf ("Door link found in outgoing link %s\n", PR_GetString (ed->v.classname));
 				}
 
 				// Inspect all other edicts to find incoming links
@@ -450,7 +458,9 @@ void SV_TouchLinks (edict_t *ent)
 
 				for (i = 1, ed = NEXT_EDICT (qcvm->edicts); i < qcvm->num_edicts; i++, ed = NEXT_EDICT (ed))
 				{
-					if (ed == sv_player || ed->free || ed == touch)
+
+					//if (ed == sv_player || ed->free || ed == touch)
+					if (ed == sv_player || ed == touch)
 						continue;
 
 					// Check target/targetname matches
@@ -461,7 +471,7 @@ void SV_TouchLinks (edict_t *ent)
 						if (!strcmp (PR_GetString (ed->v.classname), "door")) door_link_found = true;
 					}
 					else if (*focus_target && !strcmp (focus_target, targetname)) {
-						if(!strcmp(PR_GetString(ed->v.classname),"door")) door_link_found = true;
+						if (!strcmp (PR_GetString (ed->v.classname), "door")) door_link_found = true;
 					}
 					// Check for entity field references (other than .chain)
 					for (j = 0; j < qcvm->numentityfields; j++)
@@ -474,6 +484,7 @@ void SV_TouchLinks (edict_t *ent)
 					}
 				}
 				if (!door_link_found) PR_ExecuteProgram (touch->v.touch);
+				else { Con_DPrintf ("Blocked edict %s because of door link.\n", PR_GetString (touch->v.classname)); }
 			}
 			else PR_ExecuteProgram (touch->v.touch);
 		}

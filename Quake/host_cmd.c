@@ -1940,26 +1940,6 @@ static void Host_Map_f (void)
 	int		i;
 	char	name[MAX_QPATH], *p;
 
-	if (Cmd_Argc() < 2)	//no map name given
-	{
-		if (cls.state == ca_dedicated)
-		{
-			if (sv.active)
-				Con_Printf ("Current map: %s\n", sv.name);
-			else
-				Con_Printf ("Server not active\n");
-		}
-		else if (cls.state == ca_connected)
-		{
-			Con_Printf ("Current map: %s ( %s )\n", cl.levelname, cl.mapname);
-		}
-		else
-		{
-			Con_Printf ("map <levelname>: start a new server\n");
-		}
-		return;
-	}
-
 	if (cmd_source != src_command)
 		return;
 
@@ -1995,6 +1975,29 @@ static void Host_Map_f (void)
 		}
 
 		Cmd_ExecuteString ("connect local", src_command);
+	}
+
+	// [ap] Only called once a map is loaded
+	ap_fresh_map = 1;
+
+	if (Cmd_Argc () < 2)	//no map name given
+	{
+		if (cls.state == ca_dedicated)
+		{
+			if (sv.active)
+				Con_Printf ("Current map: %s\n", sv.name);
+			else
+				Con_Printf ("Server not active\n");
+		}
+		else if (cls.state == ca_connected)
+		{
+			Con_Printf ("Current map: %s ( %s )\n", cl.levelname, cl.mapname);
+		}
+		else
+		{
+			Con_Printf ("map <levelname>: start a new server\n");
+		}
+		return;
 	}
 }
 
@@ -2082,6 +2085,12 @@ static void Host_Changelevel_f (void)
 {
 	char	level[MAX_QPATH];
 
+	// [ap] Call map menu on changelevel-trigger
+	if (AP_HOOK) {
+		Cbuf_AddText ("menu_maps\n");
+		return;
+	}
+
 	if (Cmd_Argc() != 2)
 	{
 		Con_Printf ("changelevel <levelname> : continue game on a new level\n");
@@ -2125,6 +2134,8 @@ Restarts the current server for a dead player
 static void Host_Restart_f (void)
 {
 	char	mapname[MAX_QPATH];
+	// [ap] server restart means player death
+	ap_fresh_map = 1;
 
 	if (cls.demoplayback || !sv.active)
 		return;
@@ -2558,6 +2569,20 @@ static void Host_Loadgame_f (void)
 	}
 
 	data = start;
+	// [ap] load and check if seed matches
+	data = COM_ParseStringNewline (data);
+	const char* savedata_name = ap_get_savedata_name ();
+	if (strcmp (com_token, savedata_name)){
+		free (start);
+		start = NULL;
+		if (sv.autoloading)
+			Con_Printf ("ERROR: Savegame is not for this AP seed.\n");
+		else
+			Host_Error ("ERROR: Savegame is not for this AP seed.");
+		//Host_InvalidateSave (relname);
+		SCR_EndLoadingPlaque ();
+		return;
+	}
 	data = COM_ParseIntNewline (data, &version);
 	if (version == SAVEGAME_VERSION_KEX)
 	{
@@ -2658,6 +2683,29 @@ static void Host_Loadgame_f (void)
 				ent->baseline.scale = ENTSCALE_DEFAULT;
 			}
 			data = ED_ParseEdict (data, ent);
+
+			// remove from loadgame data if collected
+			// TODO: Is this deletion method stable? baseline.origin is 0,0,0 in case of previous free
+			if ((!strncmp (PR_GetString (ent->v.classname), "item_", 5) || !strncmp (PR_GetString (ent->v.classname), "weapon_", 7))) {
+				uint64_t loc_hash;
+				if (!strcmp (PR_GetString (ent->v.classname), "item_shells") || !strcmp (PR_GetString (ent->v.classname), "item_spikes")
+					|| !strcmp (PR_GetString (ent->v.classname), "item_rockets") || !strcmp (PR_GetString (ent->v.classname), "item_cells")
+					|| !strcmp (PR_GetString (ent->v.classname), "item_health"))
+				{
+					loc_hash = generate_hash (ent->baseline.origin[0] - 16, ent->baseline.origin[1] - 16, ent->baseline.origin[2], PR_GetString (ent->v.classname));
+				}
+				else
+					loc_hash = generate_hash (ent->baseline.origin[0], ent->baseline.origin[1], ent->baseline.origin[2], PR_GetString (ent->v.classname));
+				if (!strcmp (edict_get_loc_name (loc_hash, "items"), "") && ent->baseline.origin[0] == 0.0 && ent->baseline.origin[1] == 0.0 && ent->baseline.origin[2] == 0.0) {
+					ED_Free (ent);
+				}
+			}
+			else if ((!strncmp (PR_GetString (ent->v.classname), "trigger_secret", 14))) {
+				uint64_t loc_hash = generate_hash (ent->v.absmax[0], ent->v.absmax[1], ent->v.absmax[2], PR_GetString (ent->v.classname));
+				if (ap_free_collected_edicts (loc_hash, "secrets")) {
+					ED_Free (ent);
+				}
+			}
 
 			// link it into the bsp tree
 			if (!ent->free)
@@ -3155,32 +3203,40 @@ static void Host_Spawn_f (void)
 	MSG_WriteByte (&host_client->message, 3);
 	host_client->sendsignon = PRESPAWN_FLUSH;
 
-	// [ap] this is a good place to set global quakeC vars
-	// this func only gets called once, updates will have to run through an each-frame func
-	// TODO: For now these are just testing vars
-	/*
-	.float ap_items;
-	.float quad_uses;
-	.float invuln_uses;
-	.float bio_uses;
-	.float invis_uses;
-	.float backpack_uses;
-	.float medkit_uses;
-	*/
-	eval_t* val; // [ap]
-	//if grenade saver
-	//int	v = 2; // [ap]
-	// if rocket saver
-	//int	v = 1; // [ap]
-	//else
-	int	v = AP_ROCKETSAVER | AP_ROCKETJUMP | AP_GRENADEJUMP | AP_GRENADESAVER; // [ap]
-	//val = GetEdictFieldValue (host_client->edict, ED_FindFieldOffset ("ap_items"));
-	val = GetEdictFieldValueByName (host_client->edict, "ap_items");
-	if (val && val->_float != v) val->_float = v;
-	v = 5;
-	//val = GetEdictFieldValue (host_client->edict, ED_FindFieldOffset ("quad_uses"));
-	val = GetEdictFieldValueByName (host_client->edict, "quad_uses");
-	if (val && val->_float != v) val->_float = v;
+	// [ap] this is called on spawn and save/load
+	// only apply when a new map is loaded or a death trap was triggered
+	if (ap_fresh_map && !AP_DEBUG_SPAWN) {
+		eval_t* val; // [ap]
+		ap_sync_inventory ();
+		int	v = ap_get_quakec_apflag (); // [ap] return quakec flag to be set
+		ap_set_inventory_to_max ();
+
+		val = GetEdictFieldValueByName (host_client->edict, "ap_items");
+		if (val && val->_float != v) val->_float = v;
+
+		val = GetEdictFieldValueByName (host_client->edict, "quad_uses");
+		if (val && val->_float != ap_inv_arr[0]) val->_float = ap_inv_arr[0];
+
+		val = GetEdictFieldValueByName (host_client->edict, "invuln_uses");
+		if (val && val->_float != ap_inv_arr[1]) val->_float = ap_inv_arr[1];
+
+		val = GetEdictFieldValueByName (host_client->edict, "bio_uses");
+		if (val && val->_float != ap_inv_arr[2]) val->_float = ap_inv_arr[2];
+
+		val = GetEdictFieldValueByName (host_client->edict, "invis_uses");
+		if (val && val->_float != ap_inv_arr[3]) val->_float = ap_inv_arr[3];
+
+		val = GetEdictFieldValueByName (host_client->edict, "backpack_uses");
+		if (val && val->_float != ap_inv_arr[4]) val->_float = ap_inv_arr[4];
+
+		val = GetEdictFieldValueByName (host_client->edict, "medkit_uses");
+		if (val && val->_float != ap_inv_arr[5]) val->_float = ap_inv_arr[5];
+
+		val = GetEdictFieldValueByName (host_client->edict, "armor_uses");
+		if (val && val->_float != ap_inv_arr[6]) val->_float = ap_inv_arr[6];
+
+		ap_fresh_map = 0;
+	}
 }
 
 /*

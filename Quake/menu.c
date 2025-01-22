@@ -1043,11 +1043,12 @@ void M_List_Char (menulist_t *list, int key)
 void M_List_Mousemove (menulist_t *list, int yrel)
 {
 	int i, firstvis, numvis;
+	int gap_size = 14;
 
 	M_List_GetVisibleRange (list, &firstvis, &numvis);
 	if (!numvis || yrel < 0)
 		return;
-	i = yrel / 8;
+	i = yrel / gap_size;
 	if (i >= numvis)
 		return;
 
@@ -1058,7 +1059,7 @@ void M_List_Mousemove (menulist_t *list, int yrel)
 	if (list->isactive_fn && !list->isactive_fn (i))
 	{
 		int before, after;
-		yrel += firstvis * 8;
+		yrel += firstvis * gap_size;
 
 		for (before = i - 1; before >= firstvis; before--)
 			if (list->isactive_fn (before))
@@ -1069,8 +1070,8 @@ void M_List_Mousemove (menulist_t *list, int yrel)
 
 		if (before >= firstvis && after < firstvis + numvis)
 		{
-			int distbefore = yrel - 4 - before * 8;
-			int distafter = after * 8 + 4 - yrel;
+			int distbefore = yrel - 4 - before * gap_size;
+			int distafter = after * gap_size + 4 - yrel;
 			i = distbefore < distafter ? before : after;
 		}
 		else if (before >= firstvis)
@@ -1395,6 +1396,11 @@ void M_SinglePlayer_Key (int key)
 		switch (m_singleplayer_cursor)
 		{
 		case 0:
+			// [ap] Always launch levels menu
+			if (AP_HOOK) {
+				M_Menu_Maps_f ();
+				break;
+			}
 			if (sv.active)
 				if (!SCR_ModalMessage("Are you sure you want to\nstart a new game? (y/n)\n", 0.0f))
 					break;
@@ -1454,6 +1460,7 @@ void M_ScanSaves (void)
 	char	name[MAX_OSPATH];
 	FILE	*f;
 	int	version;
+	char ap_seed[65];
 
 	for (i = 0; i < MAX_SAVEGAMES; i++)
 	{
@@ -1462,6 +1469,16 @@ void M_ScanSaves (void)
 		q_snprintf (name, sizeof(name), "%s/s%i.sav", com_gamedir, i);
 		f = Sys_fopen (name, "r");
 		if (!f) {
+			continue;
+		}
+		// [ap Check AP Seed]
+		if (fscanf (f, "%64s\n", ap_seed) != 1) {
+			fclose (f);
+			continue;
+		}
+		const char* savedata_name = ap_get_savedata_name ();
+		if (strcmp (savedata_name, ap_seed)) {
+			fclose (f);
 			continue;
 		}
 		if (fscanf(f, "%i\n", &version) != 1 ||
@@ -1776,6 +1793,9 @@ static void M_Maps_Init (void)
 		type = ExtraMaps_GetType (item);
 		if (type >= MAPTYPE_BMODEL)
 			continue;
+		// [ap] dont show unused/locked levels
+		if ((!ap_is_level_used (item->name) || !ap_is_level_unlocked (item->name)))
+			continue;
 		if (prev_type != -1 && prev_type != type)
 			M_Maps_AddSeparator (prev_type, type);
 		prev_type = type;
@@ -1839,6 +1859,8 @@ void M_Maps_Draw (void)
 	int firstvis, numvis;
 	int firstvismap, numvismaps;
 	int namecols, desccols;
+	//[ap] introduce gap_size
+	int gap_size = 14;
 
 	M_Maps_UpdateLayout ();
 
@@ -1871,6 +1893,10 @@ void M_Maps_Draw (void)
 	firstvismap = -1;
 	numvismaps = 0;
 	M_List_GetVisibleRange (&mapsmenu.list, &firstvis, &numvis);
+	// [ap] add keys to menu draw
+	qpic_t* silver_key = Draw_PicFromWad ("sb_key1");
+	qpic_t* gold_key = Draw_PicFromWad ("sb_key2");
+
 	for (i = 0; i < numvis; i++)
 	{
 		int idx = i + firstvis;
@@ -1881,10 +1907,11 @@ void M_Maps_Draw (void)
 
 		if (!item->source)
 		{
-			M_PrintWhite (x + (cols - strlen (item->name))/2*8, y + i*8, item->name);
+			M_PrintWhite (x + (cols - strlen (item->name))/2*8, y + i * gap_size, item->name);
 		}
 		else
 		{
+			
 			char buf[256];
 			if (mapsmenu.list.search.len > 0)
 				COM_TintSubstring (item->name, mapsmenu.list.search.text, buf, sizeof (buf));
@@ -1896,7 +1923,12 @@ void M_Maps_Draw (void)
 			numvismaps++;
 
 			for (j = 0; j < namecols - 2 && buf[j]; j++)
-				M_DrawCharacter (x + j*8, y + i*8, buf[j] ^ mask);
+				M_DrawCharacter (x + j*8, y + i*gap_size, buf[j] ^ mask);
+
+			// [ap] draw obtained keys
+			uint64_t* keyflag = ap_get_key_flags (item->name);
+			if (keyflag && (*keyflag & IT_KEY1)) M_DrawPic (x + j * 8 - 30, y + i * gap_size, silver_key);
+			if (keyflag && (*keyflag & IT_KEY2)) M_DrawPic (x + j * 8 - 60, y + i * gap_size, gold_key);
 
 			if (!message || message[0])
 			{
@@ -1912,11 +1944,11 @@ void M_Maps_Draw (void)
 
 				GL_SetCanvasColor (1, 1, 1, 0.375f);
 				for (/**/; j < namecols; j++)
-					M_DrawCharacter (x + j*8, y + i*8, '.' | mask);
+					M_DrawCharacter (x + j*8, y + i*gap_size, '.' | mask);
 				if (message)
 					GL_SetCanvasColor (1, 1, 1, 1);
 
-				M_PrintScroll (x + namecols*8, y + i*8, desccols*8, buf,
+				M_PrintScroll (x + namecols*8, y + i*gap_size, desccols*8, buf,
 					selected ? mapsmenu.ticker.scroll_time : 0.0, true);
 				
 				if (!message)
@@ -1925,7 +1957,7 @@ void M_Maps_Draw (void)
 		}
 
 		if (selected)
-			M_DrawArrowCursor (x - 8, y + i*8);
+			M_DrawArrowCursor (x - 8, y + i*gap_size);
 	}
 
 	str = va("%d-%d of %d", firstvismap + 1, firstvismap + numvismaps, mapsmenu.mapcount);
@@ -1938,10 +1970,10 @@ void M_Maps_Draw (void)
 		if (mapsmenu.list.scroll > 0)
 			M_DrawEllipsisBar (x, y - 8, cols);
 		if (mapsmenu.list.scroll + mapsmenu.list.viewsize < mapsmenu.list.numitems)
-			M_DrawEllipsisBar (x, y + mapsmenu.list.viewsize*8, cols);
+			M_DrawEllipsisBar (x, y + mapsmenu.list.viewsize*gap_size, cols);
 	}
 
-	M_List_DrawSearch (&mapsmenu.list, x, y + mapsmenu.list.viewsize*8 + 4, namecols);
+	M_List_DrawSearch (&mapsmenu.list, x, y + mapsmenu.list.viewsize*gap_size + 4, namecols);
 }
 
 void M_Maps_Char (int key)
@@ -1957,6 +1989,7 @@ textmode_t M_Maps_TextEntry (void)
 void M_Maps_Key (int key)
 {
 	int x, y;
+	int gap_size = 14;
 
 	if (mapsmenu.scrollbar_grab)
 	{
@@ -1996,7 +2029,8 @@ void M_Maps_Key (int key)
 	case K_ABUTTON:
 	enter:
 		M_List_ClearSearch (&mapsmenu.list);
-		if (mapsmenu.items[mapsmenu.list.cursor].name[0])
+		// [ap] add check for 0 list 
+		if (mapsmenu.list.numitems > 0 && mapsmenu.items[mapsmenu.list.cursor].name[0])
 		{
 			M_SetSkillMenuMap (mapsmenu.items[mapsmenu.list.cursor].name);
 			M_Menu_Skill_f ();
@@ -2006,7 +2040,7 @@ void M_Maps_Key (int key)
 		break;
 
 	case K_MOUSE1:
-		x = m_mousex - mapsmenu.x - (mapsmenu.cols - 1) * 8;
+		x = m_mousex - mapsmenu.x - (mapsmenu.cols - 1) * gap_size;
 		y = m_mousey - mapsmenu.y;
 		if (x < -8 || !M_List_UseScrollbar (&mapsmenu.list, y))
 			goto enter;
@@ -2063,7 +2097,15 @@ void M_SetSkillMenuMap (const char *name)
 void M_Menu_Skill_f (void)
 {
 	char autosave[MAX_OSPATH];
-
+	// [ap] immediately launch map without skill selection
+	if (AP_HOOK) {
+		Cbuf_AddText (va ("skill %d\n", ap_skill));
+		Cbuf_AddText ("maxplayers 1\n");
+		Cbuf_AddText ("deathmatch 0\n");
+		Cbuf_AddText ("coop 0\n");
+		Cbuf_AddText ("campaign 0\n");
+		Cbuf_AddText (va ("map \"%s\"\n", m_skill_mapname));
+	}
 	m_skill_canresume = false;
 	m_skill_lastplayed = 0;
 	q_snprintf (autosave, sizeof (autosave), "%s/autosave/%s.sav", com_gamedir, m_skill_mapname);
@@ -4970,6 +5012,16 @@ static const menukeybind_t menubinds[] =
 	{"menu_maps",		"Maps menu",			KDM_ANY},
 	{"menu_options",	"Options menu",			KDM_ANY},
 	{"screenshot",		"Screenshot",			KDM_ANY},
+	{"",				"",						KDM_ANY},
+	// [ap] Added keybinds
+	{"impulse 200",		"AP Quad Damage",		KDM_ANY},
+	{"impulse 201",		"AP Invuln",			KDM_ANY},
+	{"impulse 202",		"AP Biosuit",			KDM_ANY},
+	{"impulse 203",		"AP Invis",				KDM_ANY},
+	{"impulse 204",		"AP Backpack",			KDM_ANY},
+	{"impulse 205",		"AP Medkit",			KDM_ANY},
+	{"impulse 206",		"AP Armor",				KDM_ANY},
+	{"automap",			"AP Automap",			KDM_ANY},
 };
 
 #define	NUMCOMMANDS		Q_COUNTOF(menubinds)
@@ -7555,7 +7607,7 @@ void M_CheckMods (void)
 
 	m_singleplayer_showlevels = M_CheckCustomGfx ("gfx/sp_maps.lmp",
 		"gfx/sp_menu.lmp", 14856, sp_hashes, countof (sp_hashes));
-
+	if (AP_HOOK) m_singleplayer_showlevels = 0;
 	m_skill_usegfx = M_CheckCustomGfx ("gfx/skillmenu.lmp",
 		"gfx/sp_menu.lmp", 14856, sp_hashes, countof (sp_hashes));
 

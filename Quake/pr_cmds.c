@@ -676,8 +676,11 @@ static void PF_sound (void)
 	sample = G_STRING(OFS_PARM2);
 	volume = G_FLOAT(OFS_PARM3) * 255;
 	attenuation = G_FLOAT(OFS_PARM4);
-
-	SV_StartSound (entity, channel, sample, volume, attenuation);
+	// [ap] sound trap code
+	if (ap_active_traps[3])
+		SV_StartSound (entity, channel, "player/plyrjmp8.wav", volume, attenuation);
+	else
+		SV_StartSound (entity, channel, sample, volume, attenuation);
 }
 
 /*

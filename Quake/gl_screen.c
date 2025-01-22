@@ -93,6 +93,13 @@ cvar_t		scr_pixelaspect = {"scr_pixelaspect", "1", CVAR_ARCHIVE};
 cvar_t		scr_showfps = {"scr_showfps", "0", CVAR_ARCHIVE};
 cvar_t		scr_showspeed = {"scr_showspeed", "0", CVAR_ARCHIVE};
 cvar_t		scr_clock = {"scr_clock", "0", CVAR_ARCHIVE};
+// [ap] cvars for port of joequake speed
+cvar_t		show_speed_x = {"show_speed_x", "0", CVAR_ARCHIVE };
+cvar_t		show_speed_y = {"show_speed_y", "0", CVAR_ARCHIVE };
+cvar_t		show_speed_alpha = {"show_speed_alpha", "0.8", CVAR_ARCHIVE };
+// [ap] HUD cvars
+cvar_t		ap_shorthud = { "ap_shorthud", "0", CVAR_ARCHIVE };
+
 //johnfitz
 cvar_t		scr_usekfont = {"scr_usekfont", "0", CVAR_NONE}; // 2021 re-release
 
@@ -133,6 +140,8 @@ qpic_t		*scr_turtle;
 
 int			clearconsole;
 int			clearnotify;
+//[ap]
+int			console_active;
 
 vrect_t		scr_vrect;
 
@@ -371,6 +380,7 @@ SCR_ZoomDown_f
 */
 static void SCR_ZoomDown_f (void)
 {
+	ap_active_traps[1] = 1;
 	cl.zoomdir = 1.f;
 }
 
@@ -639,6 +649,12 @@ void SCR_Init (void)
 	Cvar_RegisterVariable (&scr_clock);
 	Cvar_RegisterVariable (&cl_screenshotname);
 	Cvar_RegisterVariable (&scr_demobar_timeout);
+	// [ap] joequake speed port
+	Cvar_RegisterVariable (&show_speed_x);
+	Cvar_RegisterVariable (&show_speed_y);
+	Cvar_RegisterVariable (&show_speed_alpha);
+	// [ap] HUD cvars
+	Cvar_RegisterVariable (&ap_shorthud);
 	//johnfitz
 	Cvar_RegisterVariable (&scr_usekfont); // 2021 re-release
 	Cvar_SetCallback (&scr_fov, SCR_Callback_refdef);
@@ -748,6 +764,69 @@ void SCR_DrawFPS (void)
 
 /*
 ==============
+SCR_DrawAPHUD
+==============
+*/
+void SCR_DrawAPHUD (void)
+{
+	if (cl.intermission || CL_InCutscene () || scr_viewsize.value >= 130 || !AP_HOOK || console_active)
+		return;
+	
+
+	char	str[256];
+	int	x, y;
+	GL_SetCanvas (CANVAS_SBAR);
+	x = 0;
+	y = 0;
+	
+	if (!ap_scoreboard) {
+		if (ap_shorthud.value) sprintf (str, "Qua:%i/%i Ivl:%i/%i Bio:%i/%i Ivs:%i/%i", ap_inv_arr[0], ap_inv_max_arr[0], ap_inv_arr[1], ap_inv_max_arr[1], ap_inv_arr[2], ap_inv_max_arr[2], ap_inv_arr[3], ap_inv_max_arr[3]);
+		else sprintf (str, "Quad:%i/%i Invuln:%i/%i Bio:%i/%i Invis:%i/%i", ap_inv_arr[0], ap_inv_max_arr[0], ap_inv_arr[1], ap_inv_max_arr[1], ap_inv_arr[2], ap_inv_max_arr[2], ap_inv_arr[3], ap_inv_max_arr[3]);
+		x = ((glcanvas.left + glcanvas.right) / 2) - ((strlen (str) << 3) / 2);
+		if (hudstyle == HUD_CLASSIC || hudstyle == HUD_QUAKEWORLD)
+			y = glcanvas.bottom - 60;
+		else
+			y = glcanvas.bottom - 20;
+		Draw_String (x, y, str);
+
+		y = glcanvas.bottom - 80;
+		if (ap_shorthud.value) sprintf (str, "M:%i/%i A:%i/%i BP:%i/%i", ap_inv_arr[5], ap_inv_max_arr[5], ap_inv_arr[6], ap_inv_max_arr[6], ap_inv_arr[4], ap_inv_max_arr[4]);
+		else sprintf (str, "Medkit:%i/%i Armor:%i/%i Backpack:%i/%i", ap_inv_arr[5], ap_inv_max_arr[5], ap_inv_arr[6], ap_inv_max_arr[6], ap_inv_arr[4], ap_inv_max_arr[4]);
+		x = glcanvas.left;
+		Draw_String (x, y, str);
+
+		// Draw collection stats
+		uint16_t collected = 0;
+		uint16_t total = 0;
+		ap_remaining_items (&collected, &total);
+		sprintf (str, "AP: %i/%i", collected, total);
+		x = glcanvas.right - (strlen (str) << 3);
+		y = glcanvas.bottom - 80;
+		Draw_String (x, y, str);
+	}	
+	else {
+		GL_SetCanvas (CANVAS_TOPRIGHT);
+		if (ap_shorthud.value) sprintf (str, "Ju:%i Do:%i Bu:%i Di:%i", ap_can_jump (), ap_can_door (), ap_can_button (), ap_can_dive ());
+		else sprintf (str, "Jump:%i Door:%i Button:%i Dive:%i", ap_can_jump (), ap_can_door (), ap_can_button (), ap_can_dive ());
+		x = 320 - (strlen (str) << 3);
+		Draw_String (x, y + 30, str);
+		int shootswitch_status = (ap_can_shootswitch () == AP_SHOOTSWITCH) ? 1 : ap_can_shootswitch ();
+		int gj_status = (ap_can_grenadejump () == AP_GRENADEJUMP) ? 1 : ap_can_grenadejump ();
+		int rj_status = (ap_can_rocketjump () == AP_ROCKETJUMP) ? 1 : ap_can_rocketjump ();
+		int gjs_status = (ap_can_grenadesaver () == AP_GRENADESAVER) ? 1 : ap_can_grenadesaver ();
+		int rjs_status = (ap_can_rocketsaver () == AP_ROCKETSAVER) ? 1 : ap_can_rocketsaver ();
+		if (ap_shorthud.value) sprintf (str, "Sh:%i Run:%i GJ:%i(%i) RJ:%i(%i)", shootswitch_status, ap_can_run (), gj_status, gjs_status, rj_status, rjs_status);
+		else sprintf (str, "ShootSwitch:%i Run:%i GJ:%i(%i) RJ:%i(%i)", shootswitch_status, ap_can_run (), gj_status, gjs_status, rj_status, rjs_status);
+		x = 320 - (strlen (str) << 3);
+		Draw_String (x, y + 40, str);
+		GL_SetCanvas (CANVAS_SBAR);
+	}	
+
+	scr_tileclear_updates = 0;
+}
+
+/*
+==============
 SCR_DrawSpeed
 ==============
 */
@@ -780,10 +859,35 @@ void SCR_DrawSpeed (void)
 	{
 		if (display_speed >= 0)
 		{
-			char str[12];
-			sprintf (str, "%d", (int) display_speed);
-			GL_SetCanvas (CANVAS_CROSSHAIR);
-			Draw_String (-(int)strlen(str)*4, 4, str);
+			// [ap] ported speedbar over from joequake
+			char	st[8];
+			sprintf (st, "%3d", (int)display_speed);
+			float speedunits, alpha, size;
+			int	x, y;
+			
+			size = scr_sbarscale.value;
+			alpha = show_speed_alpha.value;
+
+			GL_SetCanvas (CANVAS_SBAR);
+			y = glcanvas.bottom - 10 - show_speed_y.value;
+			x = glcanvas.left + show_speed_x.value;
+
+			Draw_Fill (x, y - (int)(1), 160, 1, 10, alpha);
+			Draw_Fill (x, y + (int)(9), 160, 1, 10, alpha);
+			Draw_Fill (x, y, 160, 9, 52, alpha);
+
+			speedunits = display_speed;
+			if (display_speed <= 500)
+			{
+				Draw_Fill (x, y, (int)(display_speed / 3.125), 9, 100, alpha);
+			}
+			else
+			{
+				while (speedunits > 500)
+					speedunits -= 500;
+				Draw_Fill (x, y, (int)(speedunits / 3.125), 9, 68, alpha);
+			}
+			Draw_String (x + (int)(4.5 * size) - (strlen (st) * size), y, st);
 		}
 	}
 
@@ -1363,7 +1467,7 @@ void SCR_DrawEdictInfo (void)
 	// Show edict numbers and classnames for all highlighted entities.
 	// Note: reversed order, so that the focused entity is drawn last,
 	// on top of all the others.
-	for (i = (int) VEC_SIZE (bbox_linked) - 1; i >= 0; i--)
+	for (i = (int)VEC_SIZE (bbox_linked) - 1; i >= 0; i--)
 	{
 		ed = bbox_linked[i];
 
@@ -1387,15 +1491,65 @@ void SCR_DrawEdictInfo (void)
 		SCR_ProjToCanvas (proj, &proj2canvas, &x, &y);
 
 		// Simple overlay: centered edict number and classname (if not empty)
-		VEC_CLEAR (scr_edictoverlaystrings);
-		MultiString_Append (&scr_edictoverlaystrings, "");
-		MultiString_Append (&scr_edictoverlaystrings, va ("edict %d", NUM_FOR_EDICT (ed)));
-		if (ed->v.classname)
-		{
-			MultiString_Append (&scr_edictoverlaystrings, "");
-			MultiString_Append (&scr_edictoverlaystrings, PR_GetString (ed->v.classname));
-		}
 
+		// [ap] modified to draw the location name instead
+		if (ap_can_automap (sv.name)) {
+			if (!strncmp (PR_GetString (ed->v.classname), "item_", 5) || !strncmp (PR_GetString (ed->v.classname), "weapon_", 7)) {
+				const char* classname = PR_GetString (ed->v.classname);
+				uint64_t loc_hash;
+				if (!strcmp (PR_GetString (ed->v.classname), "item_shells") || !strcmp (PR_GetString (ed->v.classname), "item_spikes")
+					|| !strcmp (PR_GetString (ed->v.classname), "item_rockets") || !strcmp (PR_GetString (ed->v.classname), "item_cells")
+					|| !strcmp (PR_GetString (ed->v.classname), "item_health"))
+				{
+					loc_hash = generate_hash (ed->baseline.origin[0]-16, ed->baseline.origin[1]-16, ed->baseline.origin[2], classname);
+				}
+				else loc_hash = generate_hash (ed->baseline.origin[0], ed->baseline.origin[1], ed->baseline.origin[2], classname);
+				
+				char* ap_loc_name = edict_get_loc_name (loc_hash, "items");
+				VEC_CLEAR (scr_edictoverlaystrings);
+				MultiString_Append (&scr_edictoverlaystrings, "");
+				MultiString_Append (&scr_edictoverlaystrings, va ("%s", ap_loc_name));
+				MultiString_Append (&scr_edictoverlaystrings, "");
+				MultiString_Append (&scr_edictoverlaystrings, PR_GetString (ed->v.classname));
+			}
+			else if (!strcmp (PR_GetString (ed->v.classname), "trigger_secret") || !strncmp (PR_GetString (ed->v.classname), "trigger_changelevel", 19)){
+				const char* classname = PR_GetString (ed->v.classname);
+				uint64_t loc_hash = generate_hash (ed->v.absmax[0], ed->v.absmax[1], ed->v.absmax[2], classname);
+				char* ap_loc_name = "";
+				if (!strcmp (PR_GetString (ed->v.classname), "trigger_secret"))  ap_loc_name = edict_get_loc_name (loc_hash, "secrets");
+				else ap_loc_name = edict_get_loc_name (loc_hash, "exits");
+				VEC_CLEAR (scr_edictoverlaystrings);
+				MultiString_Append (&scr_edictoverlaystrings, "");
+				MultiString_Append (&scr_edictoverlaystrings, va ("%s", ap_loc_name));
+				MultiString_Append (&scr_edictoverlaystrings, "");
+				MultiString_Append (&scr_edictoverlaystrings, PR_GetString (ed->v.classname));
+				VEC_CLEAR (scr_edictoverlaystrings);
+				MultiString_Append (&scr_edictoverlaystrings, "");
+				MultiString_Append (&scr_edictoverlaystrings, va ("%s", ap_loc_name));
+				MultiString_Append (&scr_edictoverlaystrings, "");
+				MultiString_Append (&scr_edictoverlaystrings, PR_GetString (ed->v.classname));
+			}
+			else {
+				VEC_CLEAR (scr_edictoverlaystrings);
+				MultiString_Append (&scr_edictoverlaystrings, "");
+				MultiString_Append (&scr_edictoverlaystrings, va ("edict %d", NUM_FOR_EDICT (ed)));
+				if (ed->v.classname)
+				{
+					MultiString_Append (&scr_edictoverlaystrings, "");
+					MultiString_Append (&scr_edictoverlaystrings, PR_GetString (ed->v.classname));
+				}
+			}
+		}
+		else {
+			VEC_CLEAR (scr_edictoverlaystrings);
+			MultiString_Append (&scr_edictoverlaystrings, "");
+			MultiString_Append (&scr_edictoverlaystrings, va ("edict %d", NUM_FOR_EDICT (ed)));
+			if (ed->v.classname)
+			{
+				MultiString_Append (&scr_edictoverlaystrings, "");
+				MultiString_Append (&scr_edictoverlaystrings, PR_GetString (ed->v.classname));
+			}
+		}
 		// Set background color based on link type
 		switch (ed->showbboxflags)
 		{
@@ -1482,7 +1636,7 @@ void SCR_SetUpToDrawConsole (void)
 
 	if (scr_drawloading)
 		return;		// never a console with loading plaque
-
+	
 // decide on the height of the console
 	con_forcedup = !cl.worldmodel || cls.signon != SIGNONS;
 
@@ -1539,11 +1693,13 @@ void SCR_DrawConsole (void)
 		else
 			Draw_ConsoleBackground ();
 		clearconsole = 0;
+		console_active = 1;
 	}
 	else
 	{
 		if (key_dest == key_game || key_dest == key_message)
 			Con_DrawNotify ();	// only draw notify in game
+		console_active = 0;
 	}
 }
 
@@ -2137,6 +2293,7 @@ void SCR_UpdateScreen (void)
 		M_Draw ();
 		SCR_DrawFPS (); //johnfitz
 		SCR_DrawSaving ();
+		SCR_DrawAPHUD ();
 	}
 
 	Draw_Flush ();

@@ -1334,7 +1334,8 @@ void _Host_Frame (double time)
 			numframes = numserverframes = 0;
 		}
 	}
-
+	// [ap] runs every global tic
+	ap_process_global_tic ();
 	host_framecount++;
 }
 
