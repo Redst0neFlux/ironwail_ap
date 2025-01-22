@@ -789,7 +789,7 @@ void SCR_DrawAPHUD (void)
 		// Draw collection stats
 		uint16_t collected = 0;
 		uint16_t total = 0;
-		ap_remaining_items (&collected, &total);
+		ap_remaining_items (&collected, &total, sv.name);
 		sprintf (str, "AP: %i/%i", collected, total);
 		x = glcanvas.right - (strlen (str) << 3);
 		y = glcanvas.bottom - 80;
@@ -818,7 +818,7 @@ void SCR_DrawAPHUD (void)
 			// Draw collection stats
 			uint16_t collected = 0;
 			uint16_t total = 0;
-			ap_remaining_items (&collected, &total);
+			ap_remaining_items (&collected, &total, sv.name);
 			sprintf (str, "AP: %i/%i", collected, total);
 			x = glcanvas.right - (strlen (str) << 3);
 			y = glcanvas.bottom - 80;

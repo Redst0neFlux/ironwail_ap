@@ -410,9 +410,9 @@ extern int ap_free_collected_edicts (uint64_t loc_hash, char* loc_type)
 	return 0;
 }
 
-void ap_remaining_items (uint16_t* collected, uint16_t* total)
+void ap_remaining_items (uint16_t* collected, uint16_t* total, char* mapname)
 {
-	json_t* level_data = level_data = json_object_get (json_object_get (json_object_get (ap_game_config, "locations"), current_map), "items");
+	json_t* level_data = level_data = json_object_get (json_object_get (json_object_get (ap_game_config, "locations"), mapname), "items");
 	const char* k_itemkey;
 	json_t* v_itemdata;
 	json_object_foreach (level_data, k_itemkey, v_itemdata)
@@ -422,6 +422,40 @@ void ap_remaining_items (uint16_t* collected, uint16_t* total)
 		{
 			(*total)++;
 			if (AP_LOCATION_CHECKED (pickup_loc)) 
+				(*collected)++;
+		}
+	}
+}
+
+void ap_remaining_secrets (uint16_t* collected, uint16_t* total, char* mapname)
+{
+	json_t* level_data = level_data = json_object_get (json_object_get (json_object_get (ap_game_config, "locations"), mapname), "secrets");
+	const char* k_itemkey;
+	json_t* v_itemdata;
+	json_object_foreach (level_data, k_itemkey, v_itemdata)
+	{
+		ap_location_t secret_loc = (ap_location_t)json_integer_value (json_object_get (v_itemdata, "id"));
+		if (secret_loc > 0 && AP_LOCATION_CHECK_MASK (secret_loc, (AP_LOC_SECRET | AP_LOC_USED)))
+		{
+			(*total)++;
+			if (AP_LOCATION_CHECKED (secret_loc))
+				(*collected)++;
+		}
+	}
+}
+
+void ap_remaining_exits (uint16_t* collected, uint16_t* total, char* mapname)
+{
+	json_t* level_data = level_data = json_object_get (json_object_get (json_object_get (ap_game_config, "locations"), mapname), "exits");
+	const char* k_itemkey;
+	json_t* v_itemdata;
+	json_object_foreach (level_data, k_itemkey, v_itemdata)
+	{
+		ap_location_t secret_loc = (ap_location_t)json_integer_value (json_object_get (v_itemdata, "id"));
+		if (secret_loc > 0 && AP_LOCATION_CHECK_MASK (secret_loc, (AP_LOC_SECRET | AP_LOC_USED)))
+		{
+			(*total)++;
+			if (AP_LOCATION_CHECKED (secret_loc))
 				(*collected)++;
 		}
 	}
@@ -687,6 +721,7 @@ bool AP_CheckVictory (void)
 		json_object_set (player_obj, "victory", json_integer(1));
 		ap_game_state->need_sync = true;
 		AP_StoryComplete ();
+		g_queue_push_tail (ap_message_queue, _strdup ("Goal reached!"));
 	}
 	return reached_goal;
 }

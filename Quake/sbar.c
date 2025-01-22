@@ -479,7 +479,13 @@ void Sbar_SoloScoreboard (void)
 	left = 8 + strlen (str) * 8;
 	Sbar_DrawString (8, 12, str);
 
-	sprintf (str,"Secrets: %i/%i", cl.stats[STAT_SECRETS], cl.stats[STAT_TOTALSECRETS]);
+	if (AP_HOOK) {
+		uint16_t collected = 0;
+		uint16_t total = 0;
+		ap_remaining_secrets (&collected, &total, sv.name);
+		sprintf (str, "Secrets: %i/%i", collected, total);
+	}
+	else sprintf (str,"Secrets: %i/%i", cl.stats[STAT_SECRETS], cl.stats[STAT_TOTALSECRETS]);
 	right = 312 - strlen (str) * 8;
 	Sbar_DrawString (right, 12, str);
 
