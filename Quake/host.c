@@ -1336,6 +1336,11 @@ void _Host_Frame (double time)
 	}
 	// [ap] runs every global tic
 	ap_process_global_tic ();
+	// send latest messages
+	while (ap_message_pending ()) {
+		char* message = ap_get_latest_message ();
+		Con_SafePrintf (message);
+	}
 	host_framecount++;
 }
 

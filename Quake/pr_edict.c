@@ -2697,7 +2697,7 @@ void ED_Print_JSON (edict_t* ed, int ap_item_count)
 	char* spawnflags = "0.0";
 	char* origin = "";
 
-	if (!AP_DEBUG) return;
+	if (!AP_DEBUG && !AP_DEBUG_SPAWN) return;
 
 	if (ed->free)
 	{

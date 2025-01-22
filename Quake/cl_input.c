@@ -514,7 +514,8 @@ void CL_SendMove (const usercmd_t *cmd)
 				ap_jumptrap_toggle = 1;
 			}
 		}
-		else if ((in_jump.state & 3) && ap_can_jump ()) {
+		// [ap] still allow jump when submerged in water for swimming up
+		else if (((in_jump.state & 3) && ap_can_jump ()) || (sv_player && (in_jump.state & 3) && sv_player->v.waterlevel >= 3)) {
 			bits |= 2;
 		}
 			

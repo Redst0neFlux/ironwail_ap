@@ -1756,16 +1756,18 @@ static qboolean M_Maps_IsSelectable (int index)
 static void M_Maps_UpdateLayout (void)
 {
 	int height;
-
+	// [ap]
+	int gap_size = 14;
 	M_UpdateBounds ();
-
-	height = mapsmenu.list.numitems * 8 + MAPLIST_OFS + 16;
+	// [ap] 16*5 is just an estimate 
+	// TODO: Check if this always works
+	height = mapsmenu.list.numitems * gap_size + MAPLIST_OFS + 16*5;
 	height = q_min (height, m_height);
 	mapsmenu.cols = m_width / 8 - 2;
 	mapsmenu.cols = q_min (mapsmenu.cols, MAPLIST_MAXCOLS);
 	mapsmenu.x = m_left + (m_width - mapsmenu.cols * 8) / 2;
 	mapsmenu.y = m_top + (((m_height - height) / 2) & ~7);
-	mapsmenu.list.viewsize = (height - MAPLIST_OFS - 16) / 8;
+	mapsmenu.list.viewsize = (height - MAPLIST_OFS - 16) / gap_size;
 }
 //[ap]
 VictoryStats exit_stats;
@@ -1779,8 +1781,6 @@ static void M_Maps_Init (void)
 	exit_stats = AP_VictoryStats ("Exit");
 	secret_stats = AP_VictoryStats ("Secret");
 	boss_stats = AP_VictoryStats ("Boss");
-
-	
 
 	M_Maps_UpdateLayout ();
 
@@ -1853,7 +1853,8 @@ void M_Menu_Maps_f (void)
 
 		if (i == VEC_SIZE (mapsmenu.items))
 		{
-			Con_SafePrintf ("Couldn't find map \"%s\".\n", mapname);
+			// [ap] TODO: Investigate why this gets called in debug
+			if (!AP_HOOK) Con_SafePrintf ("Couldn't find map \"%s\".\n", mapname);
 			return;
 		}
 
@@ -1874,13 +1875,15 @@ void M_Maps_Draw (void)
 	int gap_size = 14;
 	// [ap] draw required goals
 	char buffer[32];
-	M_PrintWhite (mapsmenu.x, 0, "Goals:");
+	y = -120;
+	x = -240;
+	M_PrintWhite (x, y, "Goals:");
 	q_snprintf (buffer, sizeof (buffer), "Exits: %i/%i", exit_stats.item_count, exit_stats.total);
-	M_PrintWhite (mapsmenu.x + (8 << 3), 16, buffer);
+	M_PrintWhite (x, y + 8, buffer);
 	q_snprintf (buffer, sizeof (buffer), "Secrets: %i/%i", secret_stats.item_count, secret_stats.total);
-	M_PrintWhite (mapsmenu.x + (8 << 3), 24, buffer);
+	M_PrintWhite (x, y + 16, buffer);
 	q_snprintf (buffer, sizeof (buffer), "Bosses: %i/%i", boss_stats.item_count, boss_stats.total);
-	M_PrintWhite (mapsmenu.x + (8 << 3), 32, buffer);
+	M_PrintWhite (x, y + 24, buffer);
 	M_Maps_UpdateLayout ();
 
 	namecols = (int) CLAMP (14, mapsmenu.cols * 0.375f, 56) & ~1;

@@ -777,11 +777,14 @@ void SCR_DrawAPHUD (void)
 {
 	if (cl.intermission || CL_InCutscene () || scr_viewsize.value >= 130 || !AP_HOOK || console_active)
 		return;
-	
+
+	float alpha = 1.0f;
+	if (key_dest != key_game) alpha = 0.5f;
 
 	char	str[256];
 	int	x, y;
 	GL_SetCanvas (CANVAS_SBAR);
+	GL_SetCanvasColor (1.f, 1.f, 1.f, alpha);
 	x = 0;
 	y = 0;
 
@@ -811,7 +814,7 @@ void SCR_DrawAPHUD (void)
 		if (ap_shorthud.value) sprintf (str, "M:%i/%i A:%i/%i BP:%i/%i", ap_inv_arr[5], ap_inv_max_arr[5], ap_inv_arr[6], ap_inv_max_arr[6], ap_inv_arr[4], ap_inv_max_arr[4]);
 		else sprintf (str, "Medkit:%i/%i Armor:%i/%i Backpack:%i/%i", ap_inv_arr[5], ap_inv_max_arr[5], ap_inv_arr[6], ap_inv_max_arr[6], ap_inv_arr[4], ap_inv_max_arr[4]);
 		x = glcanvas.left;
-		Draw_String (x, y, str);
+		if (key_dest == key_game) Draw_String (x, y, str);
 
 		// dont draw twice
 		if (!ap_alwaysshowchecks.value) {

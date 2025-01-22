@@ -740,7 +740,7 @@ bool AP_CheckVictory (void)
 		json_object_set (player_obj, "victory", json_integer(1));
 		ap_game_state->need_sync = true;
 		AP_StoryComplete ();
-		g_queue_push_tail (ap_message_queue, _strdup ("Goal reached!"));
+		g_queue_push_tail (ap_message_queue, _strdup ("Goal reached!\n"));
 	}
 	return reached_goal;
 }
@@ -1226,6 +1226,7 @@ extern void ap_process_global_tic (void)
 	{
 		//TODO: Do something on victory
 	}
+	AP_ProcessMessages ();
 }
 
 extern void ap_set_inventory_to_max (void) {
@@ -1364,12 +1365,14 @@ int ap_can_shootswitch ()
 }
 
 int ap_is_level_used (char* mapname) {
+	if (AP_DEBUG_SPAWN) return 1;
 	//if (ap_shub_unlocked && !strcmp (mapname, "end")) return 1;
 	if (ght_lookup_str (ap_used_levels, mapname)) return 1;
 	return 0;
 }
 
 int ap_is_level_unlocked (char* mapname) {
+	if (AP_DEBUG_SPAWN) return 1;
 	//if (ap_shub_unlocked && !strcmp (mapname, "end")) return 1;
 	if (ght_lookup_str (ap_unlocked_levels, mapname)) return 1;
 	return 0;
