@@ -250,7 +250,7 @@ static ap_location_t safe_location_id (json_t* loc_id)
 {
 	if (json_is_integer (loc_id))
 		return AP_SHORT_LOCATION (json_integer_value(loc_id));
-	return -1;
+	return 0;
 }
 
 static void set_goals (json_t* jobj)
@@ -291,26 +291,20 @@ static void ap_parse_levels ()
 	json_t* jobj = json_object_get (ap_game_config, "episodes");
 	json_object_foreach (jobj, k_ep, v_ep)
 	{
-		GArray* episode_active_levels = g_array_new (FALSE, FALSE, sizeof (gpointer));
-		//uint8_t volumenum = (uint8_t)json_integer_value (json_object_get (v_ep, "volumenum"));
-		//ap_episode_names[volumenum] = json_string_value (json_object_get (v_ep, "name"));
 		const char* k_lev;
 		json_t* v_lev;
 		json_t* jobj_lev = json_object_get (v_ep, "levels");
 		json_object_foreach (jobj_lev, k_lev, v_lev)
 		{
-			//uint8_t levelnum = (uint8_t)json_integer_value (json_object_get (v_lev, "levelnum"));
 			ap_net_id_t unlock = json_integer_value (json_object_get (v_lev, "unlock"));
 			const char* mapfile = json_string_value (json_object_get (v_lev, "mapfile"));
 			GString* key = g_string_new (mapfile); 
 			if (AP_IsLevelUsed (unlock)) {
 				g_hash_table_insert (ap_level_data, key, json_deep_copy (v_lev));
-				//g_array_append_val (episode_active_levels, levelnum);
 				int active = 1;
 				g_hash_table_insert (ap_used_levels, key, &active);
 			}
 		}
-		//if (episode_active_levels->len > 0) g_array_append_val (ap_active_episodes, volumenum);
 	}
 }
 
@@ -600,14 +594,14 @@ int AP_CheckLocation (uint64_t loc_hash, char* loc_type)
 }
 
 // std::vector<AP_NetworkItem> scouted_items
-void AP_LocationInfo (GArray* scouted_items)
+void AP_LocationInfo (GArray* scouted_items_in)
 {
 	// ToDo can't distinguish this from a received hint?
 	// How do we decide when we can legally store the item content
 	// as something the player should know about?
-	for (guint i = 0; i < scouted_items->len; i++)
+	for (guint i = 0; i < scouted_items_in->len; i++)
 	{
-		struct AP_NetworkItem* item = g_array_index (scouted_items, struct AP_NetworkItem*, i);
+		struct AP_NetworkItem* item = g_array_index (scouted_items_in, struct AP_NetworkItem*, i);
 		ap_location_t loc = AP_SHORT_LOCATION (item->location);
 		if (!AP_VALID_LOCATION_ID (loc))
 			continue;
@@ -736,7 +730,6 @@ bool AP_CheckVictory (void)
 		reached_goal = true;
 		json_t* player_obj = json_object_get (ap_game_state->dynamic_player, "player");
 		//TODO: Is this the correct json structure?
-		json_t* victory_obj = json_object_get (player_obj, "victory");
 		json_object_set (player_obj, "victory", json_integer(1));
 		ap_game_state->need_sync = true;
 		AP_StoryComplete ();
@@ -844,7 +837,7 @@ void ap_debug_add_edict_to_lut (uint64_t loc_hash, char* loc_name)
 	char* value = _strdup (loc_name);
 	uint64_t* key = malloc (sizeof (uint64_t));
 	if (key) *key = loc_hash;
-	g_hash_table_insert (ap_debug_edict_lut, key, loc_name);
+	g_hash_table_insert (ap_debug_edict_lut, key, value);
 }
 
 char* edict_get_loc_name (uint64_t loc_hash, char* loc_type) 
@@ -880,7 +873,7 @@ static void ap_get_item (ap_net_id_t item_id, bool silent, bool is_new)
 		if (json_object_get (dynamic_info, id_string) != NULL)
 			item_info = json_object_get (dynamic_info, id_string);
 	}
-	bool notify = json_boolean_value (json_object_get(item_info, "silent"));
+	//bool notify = json_boolean_value (json_object_get(item_info, "silent"));
 	
 	// Store counts for stateful items
 	if (is_new && json_boolean_value (json_object_get (item_info, "persistent")))

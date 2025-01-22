@@ -1080,10 +1080,7 @@ void SV_Physics_Client (edict_t	*ent, int num)
 			sv_player->v.health = 20;
 		}//TODO: sv_autoload 0 does nothing :(
 		if (ap_active_traps[1]) {
-			Cbuf_AddText ("sv_autload 0\n");
-			SV_StartSound (sv_player, 0, "player/pain5.wav", 255, 1);
-			Cbuf_AddText ("kill\n");
-			Cbuf_AddText ("sv_autload 2\n");
+			Cbuf_AddText ("impulse 220\n");
 			ap_fresh_map = 1;
 		}
 		// check if we have killed shub and send the changelevel item
