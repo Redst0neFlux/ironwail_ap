@@ -1725,7 +1725,8 @@ void SCR_DrawConsole (void)
 	}
 	else
 	{
-		if (key_dest == key_game || key_dest == key_message || (AP_HOOK && cl.intermission))
+		qboolean cutscene = CL_InCutscene ();
+		if (key_dest == key_game || key_dest == key_message)
 			Con_DrawNotify ();	// only draw notify in game
 		console_active = 0;
 	}
@@ -2297,12 +2298,16 @@ void SCR_UpdateScreen (void)
 	{
 		Sbar_IntermissionOverlay ();
 		SCR_DrawDemoControls ();
+		// [ap] still draw console on end of level to inform player
+		if (AP_HOOK) SCR_DrawConsole ();
 	}
 	else if (cl.intermission == 2 && key_dest == key_game) //end of episode
 	{
 		Sbar_FinaleOverlay ();
 		SCR_CheckDrawCenterString ();
 		SCR_DrawDemoControls ();
+		// [ap] still draw console on end of episode to inform player
+		if (AP_HOOK) SCR_DrawConsole ();
 	}
 	else
 	{
