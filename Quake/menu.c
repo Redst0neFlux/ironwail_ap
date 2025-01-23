@@ -1044,7 +1044,7 @@ void M_List_Mousemove (menulist_t *list, int yrel)
 {
 	int i, firstvis, numvis;
 	int gap_size = 8;
-	if (m_state == m_maps) gap_size = 14;
+	if (m_state == m_maps) gap_size = 16;
 
 	M_List_GetVisibleRange (list, &firstvis, &numvis);
 	if (!numvis || yrel < 0)
@@ -1757,7 +1757,7 @@ static void M_Maps_UpdateLayout (void)
 {
 	int height;
 	// [ap]
-	int gap_size = 14;
+	int gap_size = 16;
 	M_UpdateBounds ();
 	// [ap] 16*5 is just an estimate 
 	// TODO: Check if this always works
@@ -1872,17 +1872,17 @@ void M_Maps_Draw (void)
 	int firstvismap, numvismaps;
 	int namecols, desccols;
 	//[ap] introduce gap_size
-	int gap_size = 14;
+	int gap_size = 16;
 	// [ap] draw required goals
 	char buffer[32];
 	y = -120;
 	x = -240;
 	M_PrintWhite (x, y, "Goals:");
-	q_snprintf (buffer, sizeof (buffer), "Exits: %i/%i", exit_stats.item_count, exit_stats.total);
+	if (exit_stats.total > 0) q_snprintf (buffer, sizeof (buffer), "Exits: %i/%i", exit_stats.item_count, exit_stats.total);
 	M_PrintWhite (x, y + 8, buffer);
-	q_snprintf (buffer, sizeof (buffer), "Secrets: %i/%i", secret_stats.item_count, secret_stats.total);
+	if (secret_stats.total > 0) q_snprintf (buffer, sizeof (buffer), "Secrets: %i/%i", secret_stats.item_count, secret_stats.total);
 	M_PrintWhite (x, y + 16, buffer);
-	q_snprintf (buffer, sizeof (buffer), "Bosses: %i/%i", boss_stats.item_count, boss_stats.total);
+	if (boss_stats.total > 0) q_snprintf (buffer, sizeof (buffer), "Bosses: %i/%i", boss_stats.item_count, boss_stats.total);
 	M_PrintWhite (x, y + 24, buffer);
 	M_Maps_UpdateLayout ();
 
@@ -1949,8 +1949,10 @@ void M_Maps_Draw (void)
 
 			// [ap] draw obtained keys
 			uint64_t* keyflag = ap_get_key_flags (item->name);
-			if (keyflag && (*keyflag & IT_KEY1)) M_DrawPic (x + j * 8 - 30, y + i * gap_size, silver_key);
-			if (keyflag && (*keyflag & IT_KEY2)) M_DrawPic (x + j * 8 - 60, y + i * gap_size, gold_key);
+			if (keyflag && (*keyflag & IT_KEY1))
+				M_DrawPic ((x + j * 8) - 90, y + i * gap_size, silver_key);
+			if (keyflag && (*keyflag & IT_KEY2)) 
+				M_DrawPic ((x + j * 8) - 70, y + i * gap_size, gold_key);
 
 			if (!message || message[0])
 			{
@@ -2014,7 +2016,7 @@ textmode_t M_Maps_TextEntry (void)
 void M_Maps_Key (int key)
 {
 	int x, y;
-	int gap_size = 14;
+	int gap_size = 16;
 
 	if (mapsmenu.scrollbar_grab)
 	{

@@ -920,8 +920,9 @@ static void ap_get_item (ap_net_id_t item_id, bool silent, bool is_new)
 		if (val) 
 			*val |= flags;
 		else {
-			uint64_t new_val = 0 | flags;
-			g_hash_table_insert (ap_keys_per_level, gs_key, &new_val);
+			uint64_t* new_val =  (uint64_t*)malloc (sizeof (uint64_t));
+			*new_val = 0 | flags;
+			g_hash_table_insert (ap_keys_per_level, gs_key, new_val);
 		}
 	}
 	else if (!strcmp (item_type, "map")) {
