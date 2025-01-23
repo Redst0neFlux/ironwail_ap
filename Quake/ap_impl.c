@@ -80,6 +80,16 @@ GQueue* ap_message_queue = NULL;
 uint64_t rapidhash_seed = AP_QUAKE_ID_PREFIX;
 
 // Constructors
+VictoryStats* VictoryStats_new (uint16_t item_count, uint16_t total) {
+	VictoryStats* stats = (VictoryStats*)malloc (sizeof (VictoryStats));
+	if (stats == NULL) {
+		return NULL;
+	}
+	stats->item_count = item_count;
+	stats->total = total;
+	return stats;
+}
+
 ap_state_t* ap_state_new () {
 	ap_state_t* state = (ap_state_t*)malloc (sizeof (ap_state_t));
 	if (!state) return NULL;
@@ -118,6 +128,12 @@ uint64t_bool_struct* uint64t_bool_struct_new (ap_net_id_t item_id, bool notify) 
 }
 
 // Destructors
+void VictoryStats_free (VictoryStats* stats) {
+	if (stats != NULL) {
+		free (stats);
+	}
+}
+
 void ap_state_free (ap_state_t* state) {
 	if (!state) return;
 
@@ -154,7 +170,7 @@ GHashTable* ap_unlocked_levels = NULL;
 GHashTable* ap_ability_unlocks = NULL;
 GHashTable* ap_automap_unlocks = NULL;
 GHashTable* ap_keys_per_level = NULL; // Status represented by keyflags
-GHashTable* ap_hinted_locations = NULL;
+GHashTable* ap_totalcollected_data = NULL;
 
 int ap_received_scout_info = 0;
 
@@ -414,8 +430,30 @@ extern int ap_free_collected_edicts (uint64_t loc_hash, char* loc_type)
 	return 0;
 }
 
+void ap_save_totalcollected (uint16_t* collected, uint16_t* total, char* mapname, char* loc_type)
+{
+	GString* gs_key = g_string_new (mapname);
+	g_string_append (gs_key, loc_type);
+	VictoryStats* stats = VictoryStats_new (0, 0);
+	stats->item_count = *collected;
+	stats->total = *total;
+	g_hash_table_insert (ap_totalcollected_data, gs_key, stats);
+}
+
+VictoryStats* ap_get_totalcollected (const char* mapname, char* loc_type)
+{
+	VictoryStats* stats = NULL;	
+	GString* gs_key = g_string_new (mapname);
+	g_string_append (gs_key, loc_type);
+
+	stats = g_hash_table_lookup (ap_totalcollected_data, gs_key);
+	return stats;
+}
+
 void ap_remaining_items (uint16_t* collected, uint16_t* total, char* mapname)
 {
+	*total = 0;
+	*collected = 0;
 	json_t* level_data = level_data = json_object_get (json_object_get (json_object_get (ap_game_config, "locations"), mapname), "items");
 	const char* k_itemkey;
 	json_t* v_itemdata;
@@ -433,6 +471,8 @@ void ap_remaining_items (uint16_t* collected, uint16_t* total, char* mapname)
 
 void ap_remaining_secrets (uint16_t* collected, uint16_t* total, char* mapname)
 {
+	*total = 0;
+	*collected = 0;
 	json_t* level_data = level_data = json_object_get (json_object_get (json_object_get (ap_game_config, "locations"), mapname), "secrets");
 	const char* k_itemkey;
 	json_t* v_itemdata;
@@ -450,16 +490,18 @@ void ap_remaining_secrets (uint16_t* collected, uint16_t* total, char* mapname)
 
 void ap_remaining_exits (uint16_t* collected, uint16_t* total, char* mapname)
 {
+	*total = 0;
+	*collected = 0;
 	json_t* level_data = level_data = json_object_get (json_object_get (json_object_get (ap_game_config, "locations"), mapname), "exits");
 	const char* k_itemkey;
 	json_t* v_itemdata;
 	json_object_foreach (level_data, k_itemkey, v_itemdata)
 	{
-		ap_location_t secret_loc = (ap_location_t)json_integer_value (json_object_get (v_itemdata, "id"));
-		if (secret_loc > 0 && AP_LOCATION_CHECK_MASK (secret_loc, (AP_LOC_SECRET | AP_LOC_USED)))
+		ap_location_t exit_loc = (ap_location_t)json_integer_value (json_object_get (v_itemdata, "id"));
+		if (exit_loc > 0 && AP_LOCATION_CHECK_MASK (exit_loc, (AP_LOC_EXIT | AP_LOC_USED)))
 		{
 			(*total)++;
-			if (AP_LOCATION_CHECKED (secret_loc))
+			if (AP_LOCATION_CHECKED (exit_loc))
 				(*collected)++;
 		}
 	}
@@ -1664,6 +1706,8 @@ void AP_Initialize (json_t* game_config, ap_connection_settings_t connection)
 	ap_ability_unlocks = g_hash_table_new (g_string_hash, g_string_equal);
 	ap_automap_unlocks = g_hash_table_new (g_string_hash, g_string_equal);
 	ap_keys_per_level = g_hash_table_new (g_string_hash, g_string_equal);
+	ap_totalcollected_data = g_hash_table_new (g_string_hash, g_string_equal);
+
 	ap_message_queue = g_queue_new ();
 	scout_reqs = g_array_new (FALSE, FALSE, sizeof (gpointer));
 	ap_inventory_flags = 0;

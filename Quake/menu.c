@@ -1773,14 +1773,10 @@ static void M_Maps_UpdateLayout (void)
 VictoryStats exit_stats;
 VictoryStats secret_stats;
 VictoryStats boss_stats;
+
 static void M_Maps_Init (void)
 {
 	int i, active, type, prev_type;
-
-	// [ap] grab and draw goals
-	exit_stats = AP_VictoryStats ("Exit");
-	secret_stats = AP_VictoryStats ("Secret");
-	boss_stats = AP_VictoryStats ("Boss");
 
 	M_Maps_UpdateLayout ();
 
@@ -1796,6 +1792,11 @@ static void M_Maps_Init (void)
 
 	M_Ticker_Init (&mapsmenu.ticker);
 
+	// [ap] grab and draw goals
+	exit_stats = AP_VictoryStats ("Exit");
+	secret_stats = AP_VictoryStats ("Secret");
+	boss_stats = AP_VictoryStats ("Boss");
+
 	for (i = 0, active = -1, prev_type = -1; extralevels_sorted[i]; i++)
 	{
 		mapitem_t map;
@@ -1810,6 +1811,16 @@ static void M_Maps_Init (void)
 		if (prev_type != -1 && prev_type != type)
 			M_Maps_AddSeparator (prev_type, type);
 		prev_type = type;
+
+		// [ap] grab stats per level
+		uint16_t total = 0;
+		uint16_t collected = 0;
+		ap_remaining_items (&collected, &total, item->name);
+		ap_save_totalcollected (&collected, &total, item->name, "items");
+		ap_remaining_secrets (&collected, &total, item->name);
+		ap_save_totalcollected (&collected, &total, item->name, "secrets");
+		ap_remaining_exits (&collected, &total, item->name);
+		ap_save_totalcollected (&collected, &total, item->name, "exits");
 
 		map.name = item->name;
 		map.active = M_Maps_IsActive (item->name);
@@ -1877,13 +1888,17 @@ void M_Maps_Draw (void)
 	char buffer[32];
 	y = -120;
 	x = -240;
-	M_PrintWhite (x, y, "Goals:");
-	if (exit_stats.total > 0) q_snprintf (buffer, sizeof (buffer), "Exits: %i/%i", exit_stats.item_count, exit_stats.total);
-	M_PrintWhite (x, y + 8, buffer);
-	if (secret_stats.total > 0) q_snprintf (buffer, sizeof (buffer), "Secrets: %i/%i", secret_stats.item_count, secret_stats.total);
-	M_PrintWhite (x, y + 16, buffer);
-	if (boss_stats.total > 0) q_snprintf (buffer, sizeof (buffer), "Bosses: %i/%i", boss_stats.item_count, boss_stats.total);
-	M_PrintWhite (x, y + 24, buffer);
+	if (!AP_DEBUG_SPAWN) {
+		M_PrintWhite (x, y, "Goals:");
+		if (exit_stats.total > 0) q_snprintf (buffer, sizeof (buffer), "Exits: %i/%i", exit_stats.item_count, exit_stats.total);
+		M_PrintWhite (x, y + 8, buffer);
+		if (secret_stats.total > 0) q_snprintf (buffer, sizeof (buffer), "Secrets: %i/%i", secret_stats.item_count, secret_stats.total);
+		M_PrintWhite (x, y + 16, buffer);
+		if (boss_stats.total > 0) {
+			q_snprintf (buffer, sizeof (buffer), "Bosses: %i/%i", boss_stats.item_count, boss_stats.total);
+			M_PrintWhite (x, y + 24, buffer);
+		}
+	}
 	M_Maps_UpdateLayout ();
 
 	namecols = (int) CLAMP (14, mapsmenu.cols * 0.375f, 56) & ~1;
@@ -1918,6 +1933,11 @@ void M_Maps_Draw (void)
 	// [ap] add keys to menu draw
 	qpic_t* silver_key = Draw_PicFromWad ("sb_key1");
 	qpic_t* gold_key = Draw_PicFromWad ("sb_key2");
+
+	// [ap] Draw column names
+	M_PrintWhite (x + 328 + 8 * 4, y - 8, "Items");
+	M_PrintWhite (x + 378 + 8 * 4, y - 8, "Secrets");
+	M_PrintWhite (x + 443 + 8 * 4, y - 8, "Exits");
 
 	for (i = 0; i < numvis; i++)
 	{
@@ -1954,6 +1974,21 @@ void M_Maps_Draw (void)
 			if (keyflag && (*keyflag & IT_KEY2)) 
 				M_DrawPic ((x + j * 8) - 70, y + i * gap_size, gold_key);
 
+			// [ap] draw level stats
+			char buffer[32];
+			VictoryStats* item_stats = ap_get_totalcollected (item->name, "items");
+			VictoryStats* secret_stats = ap_get_totalcollected (item->name, "secrets");
+			VictoryStats* exit_stats = ap_get_totalcollected (item->name, "exits");
+
+			// Draw individual level stats
+			if (!AP_DEBUG_SPAWN) {
+				q_snprintf (buffer, sizeof (buffer), "%i/%i", item_stats->item_count, item_stats->total);
+				M_PrintWhite ((x + j * 8) + 330, y + i * gap_size, buffer);
+				q_snprintf (buffer, sizeof (buffer), "%i/%i", secret_stats->item_count, secret_stats->total);
+				M_PrintWhite ((x + j * 8) + 390, y + i * gap_size, buffer);
+				q_snprintf (buffer, sizeof (buffer), "%i/%i", exit_stats->item_count, exit_stats->total);
+				M_PrintWhite ((x + j * 8) + 450, y + i * gap_size, buffer);
+			}
 			if (!message || message[0])
 			{
 				if (!message)
@@ -1989,10 +2024,13 @@ void M_Maps_Draw (void)
 
 	if (M_List_GetOverflow (&mapsmenu.list) > 0)
 	{
-		M_List_DrawScrollbar (&mapsmenu.list, x + cols*8 - 8, y);
+		if (AP_HOOK) M_List_DrawScrollbar (&mapsmenu.list, x + cols * 8 + 32, y);
+		else M_List_DrawScrollbar (&mapsmenu.list, x + cols*8 - 8, y);
 
-		if (mapsmenu.list.scroll > 0)
-			M_DrawEllipsisBar (x, y - 8, cols);
+		if (mapsmenu.list.scroll > 0) {
+			if (AP_HOOK) M_DrawEllipsisBar (x, y - 8, cols - 18);
+			else M_DrawEllipsisBar (x, y - 8, cols);
+		}
 		if (mapsmenu.list.scroll + mapsmenu.list.viewsize < mapsmenu.list.numitems)
 			M_DrawEllipsisBar (x, y + mapsmenu.list.viewsize*gap_size, cols);
 	}

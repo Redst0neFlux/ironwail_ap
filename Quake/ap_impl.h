@@ -11,7 +11,7 @@
 
 #define AP_DEBUG 0
 // Enable to spawn in without server con to grab level data
-#define AP_DEBUG_SPAWN 0
+#define AP_DEBUG_SPAWN 1
 
 /*
 #ifdef _DEBUG
@@ -147,7 +147,7 @@ typedef struct {
 
 typedef struct {
 	uint16_t item_count;
-	int16_t total;
+	uint16_t total;
 } VictoryStats;
 
 // AP defines
@@ -180,9 +180,6 @@ extern int AP_CheckLocation (uint64_t loc_hash, char* loc_type);
 extern VictoryStats AP_VictoryStats (char* victory_name);
 extern void ap_on_map_load (char* mapname);
 extern uint64_t* ap_get_key_flags (const char* mapname);
-extern void ap_remaining_items (uint16_t* collected, uint16_t* total, char* mapname);
-extern void ap_remaining_secrets (uint16_t* collected, uint16_t* total, char* mapname);
-extern void ap_remaining_exits (uint16_t* collected, uint16_t* total, char* mapname);
 extern void ap_process_ingame_tic ();
 extern void ap_process_global_tic ();
 extern char* ap_get_latest_message ();
@@ -209,3 +206,10 @@ extern const char* ap_get_savedata_name ();
 // debug funcs
 extern void ap_debug_init ();
 extern void ap_debug_add_edict_to_lut (uint64_t loc_hash, char* loc_name);
+
+// sync map data
+extern void ap_remaining_items (uint16_t* collected, uint16_t* total, char* mapname);
+extern void ap_remaining_secrets (uint16_t* collected, uint16_t* total, char* mapname);
+extern void ap_remaining_exits (uint16_t* collected, uint16_t* total, char* mapname);
+void ap_save_totalcollected (uint16_t* collected, uint16_t* total, char* mapname, char* loc_type);
+VictoryStats* ap_get_totalcollected (const char* mapname, char* loc_type);
