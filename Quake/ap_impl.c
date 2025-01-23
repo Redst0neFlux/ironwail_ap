@@ -53,6 +53,8 @@ int ap_fresh_map = 0;
 
 int ap_scoreboard = 0;
 
+int ap_hints_received = 1;
+
 GArray* scout_reqs;
 GHashTableIter iter;
 
@@ -152,6 +154,7 @@ GHashTable* ap_unlocked_levels = NULL;
 GHashTable* ap_ability_unlocks = NULL;
 GHashTable* ap_automap_unlocks = NULL;
 GHashTable* ap_keys_per_level = NULL; // Status represented by keyflags
+GHashTable* ap_hinted_locations = NULL;
 
 int ap_received_scout_info = 0;
 
@@ -352,6 +355,13 @@ ap_location_t edict_to_ap_locid (uint64_t loc_hash, char* loc_type)
 		}
 	}
 	return AP_INVALID_LOCATION;
+}
+
+int AP_IsLocHinted (uint64_t loc_hash, char* loc_type)
+{
+	ap_location_t loc = edict_to_ap_locid (loc_hash, loc_type);
+	if (loc <= 0) return 0;
+	return (ap_locations[loc].state & AP_LOC_HINTED);
 }
 
 /*
@@ -744,6 +754,21 @@ void AP_QueueMessage (char* msg)
 	g_queue_push_tail (ap_message_queue, _strdup(msg));
 }
 
+void AP_ProcessHints ()
+{
+	json_t* hint_obj = AP_GetLocalHints ();
+
+	size_t i;
+	json_t* v;
+	json_array_foreach (hint_obj, i, v)
+	{
+		json_t* temp_hint_obj = v;
+		int found = json_boolean_value (json_object_get (temp_hint_obj, "found"));
+		uint64_t loc_id = json_integer_value (json_object_get (temp_hint_obj, "location"));
+		if (AP_SHORT_LOCATION (loc_id) > 0) ap_locations[AP_SHORT_LOCATION (loc_id)].state |= (AP_LOC_HINTED);
+	}
+}
+
 // TODO: Work on colored console message output
 void AP_ProcessMessages ()
 {
@@ -768,6 +793,7 @@ void AP_ProcessMessages ()
 			}
 			case Hint:
 			{
+				ap_hints_received = 1;
 				struct AP_HintMessage* out_msg = AP_GetLatestMessage ();
 				char* status = out_msg->checked ? "(Checked)" : "(Unchecked)";
 				g_string_printf (print_msg, "%s from %s for %s is at %s %s\n", out_msg->item, out_msg->sendPlayer, out_msg->recvPlayer, out_msg->location, status);
@@ -1221,6 +1247,11 @@ extern void ap_process_global_tic (void)
 		//TODO: Do something on victory
 	}
 	AP_ProcessMessages ();
+
+	if (ap_hints_received) {
+		AP_ProcessHints ();
+		ap_hints_received = 0;
+	}
 }
 
 extern void ap_set_inventory_to_max (void) {
@@ -1682,10 +1713,10 @@ void AP_Initialize (json_t* game_config, ap_connection_settings_t connection)
 
 	AP_SendLocationScouts (scout_reqs, FALSE);
 	ap_printf ("Connection successful.\n");
-	//AP_WebsocketTimer (50);
+
 	if (!AP_WebsocketSulInit (50))
 		ap_printf ("Failed to create Websocket Sul.\n");
-	//service_loop ();
+
 	HANDLE hThread = CreateThread (NULL, 0, service_loop_thread, NULL, 0, NULL);
 	if (hThread == NULL) {
 		ap_printf ("Error creating service loop thread\n");
@@ -1694,6 +1725,7 @@ void AP_Initialize (json_t* game_config, ap_connection_settings_t connection)
 
 	ap_printf ("Waiting for server info.\n");
 	while (!ap_received_scout_info) {}
+
 	ap_printf ("Server info received.\n");
 
 	ap_global_state = AP_INITIALIZED;

@@ -188,6 +188,7 @@ extern void ap_process_global_tic ();
 extern char* ap_get_latest_message ();
 extern int ap_message_pending ();
 extern void ap_sync_inventory ();
+int AP_IsLocHinted (uint64_t loc_hash, char* loc_type);
 
 extern int ap_replace_edict (uint64_t loc_hash, char* loc_type);
 extern int ap_free_collected_edicts (uint64_t loc_hash, char* loc_type);

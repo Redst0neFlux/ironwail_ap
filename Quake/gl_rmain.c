@@ -110,6 +110,9 @@ cvar_t	r_lerpmove = {"r_lerpmove", "1", CVAR_ARCHIVE};
 cvar_t	r_nolerp_list = {"r_nolerp_list", "progs/flame.mdl,progs/flame2.mdl,progs/braztall.mdl,progs/brazshrt.mdl,progs/longtrch.mdl,progs/flame_pyre.mdl,progs/v_saw.mdl,progs/v_xfist.mdl,progs/h2stuff/newfire.mdl", CVAR_NONE};
 cvar_t	r_noshadow_list = {"r_noshadow_list", "progs/flame2.mdl,progs/flame.mdl,progs/bolt1.mdl,progs/bolt2.mdl,progs/bolt3.mdl,progs/laser.mdl", CVAR_NONE};
 
+// [ap]
+cvar_t	ap_highlighthinted = { "ap_highlighthinted", "1", CVAR_ARCHIVE };
+
 extern cvar_t	r_vfog;
 extern cvar_t	vid_fsaa;
 //johnfitz
@@ -1612,6 +1615,8 @@ static void R_ShowBoundingBoxes (void)
 	}
 
 	// Draw all the matching edicts
+	// [ap] check if highlight
+
 	for (i = 0; i < (int) VEC_SIZE (bbox_edicts); i++)
 	{
 		ed = bbox_edicts[i];
@@ -1650,9 +1655,23 @@ static void R_ShowBoundingBoxes (void)
 		}
 		else
 		{
+			// [ap] check if loc was hinted
+			// if yes, we change color to green
+			uint64_t loc_hash;
+			if (!strcmp (PR_GetString (ed->v.classname), "item_shells") || !strcmp (PR_GetString (ed->v.classname), "item_spikes")
+				|| !strcmp (PR_GetString (ed->v.classname), "item_rockets") || !strcmp (PR_GetString (ed->v.classname), "item_cells")
+				|| !strcmp (PR_GetString (ed->v.classname), "item_health"))
+			{
+				loc_hash = generate_hash (ed->baseline.origin[0] - 16, ed->baseline.origin[1] - 16, ed->baseline.origin[2], PR_GetString (ed->v.classname));
+			}
+			else
+				loc_hash = generate_hash (ed->baseline.origin[0], ed->baseline.origin[1], ed->baseline.origin[2], PR_GetString (ed->v.classname));
+			
+			if ( ap_highlighthinted.value && (AP_IsLocHinted (loc_hash, "items"))) color = 0x7F00FF00;
 			//box entity
 			VectorAdd (ed->v.mins, ed->v.origin, mins);
 			VectorAdd (ed->v.maxs, ed->v.origin, maxs);
+			
 			R_EmitWireBox (mins, maxs, color);
 		}
 	}

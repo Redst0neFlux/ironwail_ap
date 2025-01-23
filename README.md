@@ -10,6 +10,8 @@ If set to 0, the HUD element only shows up when the scoreboard is open (tab by d
 - ap_alwaysshowchecks | always shows the available/collected checks of the current map in the bottom-right corner
 - ap_alwaysshowinventory | always shows the inventory items in the bottom middle
 
+- ap_highlighthinted | hightligh hinted items in green on the automap
+
 If scr_showspeed is enabled:
 
 - show_speed_x | Change the x coordinates of the speed bar
