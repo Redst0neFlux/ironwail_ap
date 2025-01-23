@@ -377,7 +377,7 @@ int AP_IsLocHinted (uint64_t loc_hash, char* loc_type)
 {
 	ap_location_t loc = edict_to_ap_locid (loc_hash, loc_type);
 	if (loc <= 0) return 0;
-	return (ap_locations[loc].state & AP_LOC_HINTED);
+	return (AP_LOCATION_CHECK_MASK (loc, (AP_LOC_HINTED | AP_LOC_USED)));
 }
 
 /*

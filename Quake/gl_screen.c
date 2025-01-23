@@ -1725,7 +1725,7 @@ void SCR_DrawConsole (void)
 	}
 	else
 	{
-		if (key_dest == key_game || key_dest == key_message)
+		if (key_dest == key_game || key_dest == key_message || (AP_HOOK && cl.intermission))
 			Con_DrawNotify ();	// only draw notify in game
 		console_active = 0;
 	}

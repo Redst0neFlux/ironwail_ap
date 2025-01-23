@@ -1476,6 +1476,9 @@ static void R_ShowBoundingBoxes (void)
 	mode = abs ((int)r_showbboxes.value);
 	if ((!mode && !r_showfields.value) || cl.maxclients > 1 || !r_drawentities.value || !sv.active)
 		return;
+	// [ap] disable boundingbox drawing in end of level view
+	if (AP_HOOK && !(key_dest == key_game))
+		return;
 
 	GL_BeginGroup ("Show bounding boxes");
 
