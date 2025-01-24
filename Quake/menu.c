@@ -1890,10 +1890,14 @@ void M_Maps_Draw (void)
 	x = -240;
 	if (!AP_DEBUG_SPAWN) {
 		M_PrintWhite (x, y, "Goals:");
-		if (exit_stats.total > 0) q_snprintf (buffer, sizeof (buffer), "Exits: %i/%i", exit_stats.item_count, exit_stats.total);
-		M_PrintWhite (x, y + 8, buffer);
-		if (secret_stats.total > 0) q_snprintf (buffer, sizeof (buffer), "Secrets: %i/%i", secret_stats.item_count, secret_stats.total);
-		M_PrintWhite (x, y + 16, buffer);
+		if (exit_stats.total > 0) { 
+			q_snprintf (buffer, sizeof (buffer), "Exits: %i/%i", exit_stats.item_count, exit_stats.total);
+			M_PrintWhite (x, y + 8, buffer);
+		}
+		if (secret_stats.total > 0) {
+			q_snprintf (buffer, sizeof (buffer), "Secrets: %i/%i", secret_stats.item_count, secret_stats.total);
+			M_PrintWhite (x, y + 16, buffer);
+		}
 		if (boss_stats.total > 0) {
 			q_snprintf (buffer, sizeof (buffer), "Bosses: %i/%i", boss_stats.item_count, boss_stats.total);
 			M_PrintWhite (x, y + 24, buffer);
