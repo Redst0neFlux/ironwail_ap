@@ -45,8 +45,8 @@ int ap_active_traps[TRAPS_MAX]; // 0 lowhealth, 1 death, 2 mouse, 3 sound, 4 jum
 int ap_skill = 0;
 
 int ap_shell_recharge = 0;
+int ap_powerup_recharge = 0;
 
-int ap_shub_unlocked = 0;
 int ap_shub_defeated = 0;
 
 int ap_fresh_map = 0;
@@ -1236,7 +1236,7 @@ extern void ap_process_ingame_tic (void)
 
 	// TODO: Keep track of individual "last item use" times here for more consistent recharging
 	// For now recharge inventory items every 60 seconds
-	if (elapsed_seconds_60 >= 60.0) {
+	if (ap_powerup_recharge && elapsed_seconds_60 >= 60.0) {
 		for (int i = 0; i < INV_MAX; i++)
 		{
 			if (ap_inv_arr[i] < ap_inv_max_arr[i])
@@ -1433,14 +1433,12 @@ int ap_can_shootswitch ()
 
 int ap_is_level_used (char* mapname) {
 	if (AP_DEBUG_SPAWN) return 1;
-	//if (ap_shub_unlocked && !strcmp (mapname, "end")) return 1;
 	if (ght_lookup_str (ap_used_levels, mapname)) return 1;
 	return 0;
 }
 
 int ap_is_level_unlocked (char* mapname) {
 	if (AP_DEBUG_SPAWN) return 1;
-	//if (ap_shub_unlocked && !strcmp (mapname, "end")) return 1;
 	if (ght_lookup_str (ap_unlocked_levels, mapname)) return 1;
 	return 0;
 }
@@ -1557,6 +1555,9 @@ static void set_settings (json_t* jobj)
 		}
 		if (!strcmp (k_settingkey, "shell_recharge")) {
 			ap_shell_recharge = (int)json_integer_value (v_settingdata);
+		}
+		if (!strcmp (k_settingkey, "powerup_recharge")) {
+			ap_powerup_recharge = (int)json_integer_value (v_settingdata);
 		}
 	}
 }

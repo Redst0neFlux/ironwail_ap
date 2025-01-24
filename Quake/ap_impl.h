@@ -95,11 +95,9 @@ extern int ap_active_traps[];
 extern int ap_skill;
 
 extern int ap_shub_defeated;
-extern int ap_shub_unlocked;
 
 extern int ap_fresh_map;
 
-extern int ap_short_hud;
 extern int ap_scoreboard;
 
 #define AP_LOCATION_CHECK_MASK(x, y) (AP_VALID_LOCATION_ID(x) && ((ap_locations[x].state & y) == y))
