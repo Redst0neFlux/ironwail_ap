@@ -1,21 +1,34 @@
 # Ironwail AP
-A fork of [Ironwail] (https://github.com/andrei-drexler/ironwail) designed to integrate into [Archipelago] (https://github.com/ArchipelagoMW/Archipelago/releases).
+A fork of [Ironwail](https://github.com/andrei-drexler/ironwail) designed to integrate into [Archipelago](https://github.com/ArchipelagoMW/Archipelago/releases).  
+Currently only Windows x64 is supported.  
+
+## APWorld Setup:
+- Put quake.apworld in C:\\ProgramData\\Archipelago\\custom_worlds\\
+- Start the Launcher and click "Generate Template Options" to create the Quake 1.yaml file
+- Modify it and put the .yaml file in C:\\ProgramData\\Archipelago\\players\\
+- Run ArchipelagoGenerate.exe and then ArchipelagoServer.exe
+
+## Client Setup:
+- Extract ironwail_ap.zip into a folder (e.g. .\\ironwail_ap\\ )
+- Grab PAK0.pak and PAK1.pak from an installation of Quake 1 and move it to .\\ironwail_ap\\id1\\
+- Fill out the file ap_connect_info.json
+- Launch the game and bind the new keybinds at the bottom of Options->Key Setup
 
 ## New cvars:
-These cvars set if HUD elements are always shown.
 If set to 0, the HUD element only shows up when the scoreboard is open (tab by default).
-
-- ap_shorthud | shortens the names of HUD elements to take up less space
-- ap_alwaysshowunlocks | always shows the unlocked abilities in the top-right corner
-- ap_alwaysshowchecks | always shows the available/collected checks of the current map in the bottom-right corner
-- ap_alwaysshowinventory | always shows the inventory items in the bottom middle
-
-- ap_highlighthinted | hightligh hinted items in green on the automap
+|CVAR|Description|
+|---|---|
+|ap_shorthud|shortens the names of HUD elements to take up less space|
+|ap_alwaysshowunlocks|always shows the unlocked abilities in the top-right corner|
+|ap_alwaysshowchecks|always shows the available/collected checks of the current map in the bottom-right corner|
+|ap_alwaysshowinventory|always shows the inventory items in the bottom middle|
+|ap_highlighthinted|hightligh hinted items in green on the automap|
 
 If scr_showspeed is enabled:
-
-- show_speed_x | Change the x coordinates of the speed bar
-- show_speed_y | Change the y coordinates of the speed bar
+|CVAR|Description|
+|---|---|
+|show_speed_x|Change the x coordinates of the speed bar|
+|show_speed_y|Change the y coordinates of the speed bar|
 
 
 # Original Ironwail Readme:
