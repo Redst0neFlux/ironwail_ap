@@ -1661,16 +1661,21 @@ void ED_LoadFromFile (const char *data)
 		pr_global_struct->self = EDICT_TO_PROG(ent);
 		PR_ExecuteProgram (func - qcvm->functions);
 		// check this data after spawn
-		if (!strcmp (PR_GetString (ent->v.classname), "trigger_secret") || !strcmp (PR_GetString (ent->v.classname), "trigger_changelevel")) {
+		if (!strcmp (PR_GetString (ent->v.classname), "trigger_secret")) {
 			ED_Print_JSON (ent, ap_item_count);
 			// Make sure to free already collected edicts
 			uint64_t loc_hash = generate_hash (ent->v.absmax[0], ent->v.absmax[1], ent->v.absmax[2], PR_GetString (ent->v.classname));
-			if (ap_free_collected_edicts (loc_hash, "secrets")) {
+			// Free unused secrets / changelevel triggers
+			if (ap_free_collected_edicts (loc_hash, "secrets") || !ap_replace_edict (loc_hash, "secrets")) {
 				//ap_printfd ("Marking collected secret %s (%i)\n", PR_GetString (ent->v.classname), ap_item_count);
 				remove_after[remove_array_index] = ent;
 				remove_array_index++;
 			}
-			else if (ap_free_collected_edicts (loc_hash, "exits")) {
+		}
+		else if (!strcmp (PR_GetString (ent->v.classname), "trigger_changelevel"))
+		{
+			uint64_t loc_hash = generate_hash (ent->v.absmax[0], ent->v.absmax[1], ent->v.absmax[2], PR_GetString (ent->v.classname));
+			if (ap_free_collected_edicts (loc_hash, "exits") || !ap_replace_edict (loc_hash, "exits")) {
 				remove_after[remove_array_index] = ent;
 				remove_array_index++;
 			}

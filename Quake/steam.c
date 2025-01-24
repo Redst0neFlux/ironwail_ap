@@ -792,6 +792,12 @@ between the original version and the 2021 rerelease
 */
 quakeflavor_t ChooseQuakeFlavor (void)
 {
+	// [ap] Only allow original quake
+	if (AP_HOOK) {
+		ap_error ("Please make sure the folder ./id1 contains PAK0.pak and PAK1.pak.");
+		exit (0);
+		return 0;
+	}
 #ifdef _WIN32
 	static const SDL_MessageBoxButtonData buttons[] =
 	{
