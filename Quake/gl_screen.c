@@ -383,7 +383,6 @@ SCR_ZoomDown_f
 */
 static void SCR_ZoomDown_f (void)
 {
-	ap_active_traps[1] = 1;
 	cl.zoomdir = 1.f;
 }
 
