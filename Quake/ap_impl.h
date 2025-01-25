@@ -211,3 +211,7 @@ extern void ap_remaining_secrets (uint16_t* collected, uint16_t* total, char* ma
 extern void ap_remaining_exits (uint16_t* collected, uint16_t* total, char* mapname);
 void ap_save_totalcollected (uint16_t* collected, uint16_t* total, char* mapname, char* loc_type);
 VictoryStats* ap_get_totalcollected (const char* mapname, char* loc_type);
+
+extern int AP_IsLocChecked (uint64_t loc_hash, char* loc_type);
+void ap_save_itemcount (uint64_t loc_hash, uint16_t in_count);
+uint16_t* ap_get_itemcount (uint64_t loc_hash);

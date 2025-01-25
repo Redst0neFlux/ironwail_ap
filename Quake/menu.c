@@ -1957,6 +1957,30 @@ void M_Maps_Draw (void)
 		}
 		else
 		{
+			// [ap] draw level stats
+			char buffer[32];
+			VictoryStats* item_stats = ap_get_totalcollected (item->name, "items");
+			VictoryStats* secret_stats = ap_get_totalcollected (item->name, "secrets");
+			VictoryStats* exit_stats = ap_get_totalcollected (item->name, "exits");
+
+			// Draw individual level stats
+			if (!AP_DEBUG_SPAWN) {
+				q_snprintf (buffer, sizeof (buffer), "%i/%i", item_stats->item_count, item_stats->total);
+				//M_PrintWhite ((x + j * 8) + 330, y + i * gap_size, buffer);
+				M_PrintWhite ((x + 4 * 8) + 328, y + i * gap_size, buffer);
+				q_snprintf (buffer, sizeof (buffer), "%i/%i", secret_stats->item_count, secret_stats->total);
+				//M_PrintWhite ((x + j * 8) + 390, y + i * gap_size, buffer);
+				M_PrintWhite ((x + 4 * 8) + 394, y + i * gap_size, buffer);
+				q_snprintf (buffer, sizeof (buffer), "%i/%i", exit_stats->item_count, exit_stats->total);
+				//M_PrintWhite ((x + j * 8) + 450, y + i * gap_size, buffer);
+				M_PrintWhite ((x + 4 * 8) + 451, y + i * gap_size, buffer);
+			}
+
+			// [ap] draw cleared maps in brown
+			if (!AP_DEBUG_SPAWN && item_stats->item_count >= item_stats->total && secret_stats->item_count >= secret_stats->total && exit_stats->item_count >= exit_stats->total)
+				mask = 128;
+			else
+				mask = 0;
 			
 			char buf[256];
 			if (mapsmenu.list.search.len > 0)
@@ -1978,24 +2002,6 @@ void M_Maps_Draw (void)
 			if (keyflag && (*keyflag & IT_KEY2)) 
 				M_DrawPic ((x + j * 8) - 70, y + i * gap_size, gold_key);
 
-			// [ap] draw level stats
-			char buffer[32];
-			VictoryStats* item_stats = ap_get_totalcollected (item->name, "items");
-			VictoryStats* secret_stats = ap_get_totalcollected (item->name, "secrets");
-			VictoryStats* exit_stats = ap_get_totalcollected (item->name, "exits");
-
-			// Draw individual level stats
-			if (!AP_DEBUG_SPAWN) {
-				q_snprintf (buffer, sizeof (buffer), "%i/%i", item_stats->item_count, item_stats->total);
-				//M_PrintWhite ((x + j * 8) + 330, y + i * gap_size, buffer);
-				M_PrintWhite ((x + 4 * 8 ) + 328, y + i * gap_size, buffer);
-				q_snprintf (buffer, sizeof (buffer), "%i/%i", secret_stats->item_count, secret_stats->total);
-				//M_PrintWhite ((x + j * 8) + 390, y + i * gap_size, buffer);
-				M_PrintWhite ((x + 4 * 8) + 394, y + i * gap_size, buffer);
-				q_snprintf (buffer, sizeof (buffer), "%i/%i", exit_stats->item_count, exit_stats->total);
-				//M_PrintWhite ((x + j * 8) + 450, y + i * gap_size, buffer);
-				M_PrintWhite ((x + 4 * 8) + 451, y + i * gap_size, buffer);
-			}
 			if (!message || message[0])
 			{
 				if (!message)
@@ -2009,6 +2015,7 @@ void M_Maps_Draw (void)
 					q_strlcpy (buf, message, sizeof (buf));
 
 				GL_SetCanvasColor (1, 1, 1, 0.375f);
+				
 				for (/**/; j < namecols; j++)
 					M_DrawCharacter (x + j*8, y + i*gap_size, '.' | mask);
 				if (message)

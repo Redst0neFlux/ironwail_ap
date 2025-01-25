@@ -171,6 +171,7 @@ GHashTable* ap_ability_unlocks = NULL;
 GHashTable* ap_automap_unlocks = NULL;
 GHashTable* ap_keys_per_level = NULL; // Status represented by keyflags
 GHashTable* ap_totalcollected_data = NULL;
+GHashTable* ap_itemcount_map = NULL;
 
 int ap_received_scout_info = 0;
 
@@ -263,6 +264,7 @@ void json_print_sys (const char* key, json_t* j)
 
 void ap_on_map_load(char* mapname) {
 	current_map = mapname;
+	g_hash_table_remove_all (ap_itemcount_map);
 }
 
 static ap_location_t safe_location_id (json_t* loc_id)
@@ -448,6 +450,20 @@ VictoryStats* ap_get_totalcollected (const char* mapname, char* loc_type)
 
 	stats = g_hash_table_lookup (ap_totalcollected_data, gs_key);
 	return stats;
+}
+
+void ap_save_itemcount (uint64_t loc_hash, uint16_t in_count) {
+	uint16_t* count = malloc (sizeof (uint16_t));
+	if (count) *count = in_count;
+	uint64_t* key = malloc (sizeof (uint64_t));
+	if (key) *key = loc_hash;
+	g_hash_table_insert (ap_itemcount_map, key, count);
+}
+
+uint16_t* ap_get_itemcount (uint64_t loc_hash) {
+	uint16_t* count = g_hash_table_lookup (ap_itemcount_map, &loc_hash);
+	if (count) return count;
+	else return NULL;
 }
 
 void ap_remaining_items (uint16_t* collected, uint16_t* total, char* mapname)
@@ -643,6 +659,12 @@ int AP_CheckLocation (uint64_t loc_hash, char* loc_type)
 	// And note the location check in the console
 	ap_printfd ("New Check: %s\n", AP_GetLocationName (net_loc));
 	return 1;
+}
+
+int AP_IsLocChecked (uint64_t loc_hash, char* loc_type) 
+{
+	ap_location_t loc = edict_to_ap_locid (loc_hash, loc_type);
+	return AP_LOCATION_CHECKED (loc);
 }
 
 // std::vector<AP_NetworkItem> scouted_items
@@ -897,6 +919,7 @@ GHashTable* ap_debug_edict_lut = NULL;
 void ap_debug_init ()
 {
 	if(!ap_debug_edict_lut) ap_debug_edict_lut = g_hash_table_new (g_int64_hash, g_int64_equal);
+	ap_itemcount_map = g_hash_table_new (g_int64_hash, g_int64_equal);
 	ap_set_default_inv ();
 }
 
@@ -1708,6 +1731,8 @@ void AP_Initialize (json_t* game_config, ap_connection_settings_t connection)
 	ap_automap_unlocks = g_hash_table_new (g_string_hash, g_string_equal);
 	ap_keys_per_level = g_hash_table_new (g_string_hash, g_string_equal);
 	ap_totalcollected_data = g_hash_table_new (g_string_hash, g_string_equal);
+	ap_itemcount_map = g_hash_table_new (g_int64_hash, g_int64_equal);
+	
 
 	ap_message_queue = g_queue_new ();
 	scout_reqs = g_array_new (FALSE, FALSE, sizeof (gpointer));

@@ -330,20 +330,23 @@ SV_AreaTriggerEdicts ( edict_t *ent, areanode_t *node, edict_t **list, int *list
 				loc_hash = generate_hash (touch->baseline.origin[0], touch->baseline.origin[1], touch->baseline.origin[2], PR_GetString (touch->v.classname));
 			if (!AP_DEBUG_SPAWN) AP_CheckLocation (loc_hash, "items");
 			else add_touched_edict (loc_hash, "items");
+			// [ap] We are touching a checked location, free after 3 tics
+			// TODO: Maybe less tics?
+			if (AP_IsLocChecked(loc_hash, "items") || AP_DEBUG_SPAWN) {
+				uint16_t* count = ap_get_itemcount (loc_hash);
+				if (count) {
+					count += 1;
+					if (*count >= 3)
+					{
+						Cbuf_AddText ("bf\n");
+						ED_Free (touch);
+					}
+				}
+				else {
+					ap_save_itemcount (loc_hash, 0);
+				}
+			}
 			//Con_DPrintf("AP_LOCATION %s Touched %s (%i) \n", PR_GetString(ent->v.classname), PR_GetString(touch->v.classname), NUM_FOR_EDICT(touch), touch->v.origin[0], touch->v.origin[1], touch->v.origin[2]);
-		}
-		// [ap] hook into player func when secret sectors are touched
-		// TODO: this is now done in sv_phys, remove here if no bugs
-		else if (!strncmp (PR_GetString (ent->v.classname), "player", 6) && (!strncmp (PR_GetString (touch->v.classname), "trigger_secret", 14)))
-		{
-			// TODO: Remove this code, now handled in QuakeC
-			//Con_DPrintf ("AP_SECRET Touched %s (%i)\n", PR_GetString (touch->v.classname), NUM_FOR_EDICT (touch));
-			/*uint64_t loc_hash = generate_hash (touch->v.absmax[0], touch->v.absmax[1], touch->v.absmax[2], PR_GetString (touch->v.classname));
-			if (!AP_DEBUG_SPAWN) AP_CheckLocation (loc_hash, "secrets");
-			else add_touched_edict (loc_hash, "secrets");*/
-
-			//PR_ExecuteProgram(touch->v.touch);
-			//ED_Free(touch);
 		}
 		// [ap] hook into player func when exit sectors are touched
 		else if (!strncmp (PR_GetString (ent->v.classname), "player", 6) && (!strncmp (PR_GetString (touch->v.classname), "trigger_changelevel", 19)))
@@ -433,7 +436,7 @@ void SV_TouchLinks (edict_t *ent)
 				}
 				else PR_ExecuteProgram (touch->v.touch);
 			}
-			else if (!strncmp (PR_GetString (touch->v.classname), "trigger", 7))
+			else if (!strncmp (PR_GetString (touch->v.classname), "trigger_", 8))
 			{
 				int j = 0;
 				edict_t* ed;
