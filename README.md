@@ -30,9 +30,6 @@ If scr_showspeed is enabled:
 |show_speed_x|Change the x coordinates of the speed bar|
 |show_speed_y|Change the y coordinates of the speed bar|
 
-## Engine limitations
-- Due to the way triggers are handled in the game, some items can't be picked up, until the Door ability has been acquired.
-
 # Original Ironwail Readme:
 
 # What's this?
