@@ -10,7 +10,7 @@
 #define AP_SHOOTSWITCH 16
 
 #define AP_DEBUG 0
-// Enable to spawn in without server con to grab level data
+// Enable to spawn in without server connection to grab level data
 #define AP_DEBUG_SPAWN 0
 
 /*

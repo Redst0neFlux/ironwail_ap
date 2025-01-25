@@ -1666,7 +1666,7 @@ void ED_LoadFromFile (const char *data)
 			// Make sure to free already collected edicts
 			uint64_t loc_hash = generate_hash (ent->v.absmax[0], ent->v.absmax[1], ent->v.absmax[2], PR_GetString (ent->v.classname));
 			// Free unused secrets / changelevel triggers
-			if (ap_free_collected_edicts (loc_hash, "secrets") || !ap_replace_edict (loc_hash, "secrets")) {
+			if (!AP_DEBUG_SPAWN && (ap_free_collected_edicts (loc_hash, "secrets") || !ap_replace_edict (loc_hash, "secrets"))) {
 				//ap_printfd ("Marking collected secret %s (%i)\n", PR_GetString (ent->v.classname), ap_item_count);
 				remove_after[remove_array_index] = ent;
 				remove_array_index++;
@@ -1675,7 +1675,7 @@ void ED_LoadFromFile (const char *data)
 		else if (!strcmp (PR_GetString (ent->v.classname), "trigger_changelevel"))
 		{
 			uint64_t loc_hash = generate_hash (ent->v.absmax[0], ent->v.absmax[1], ent->v.absmax[2], PR_GetString (ent->v.classname));
-			if (ap_free_collected_edicts (loc_hash, "exits") || !ap_replace_edict (loc_hash, "exits")) {
+			if (!AP_DEBUG_SPAWN && (ap_free_collected_edicts (loc_hash, "exits") || !ap_replace_edict (loc_hash, "exits"))) {
 				remove_after[remove_array_index] = ent;
 				remove_array_index++;
 			}
