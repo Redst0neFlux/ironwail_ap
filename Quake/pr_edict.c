@@ -1674,6 +1674,7 @@ void ED_LoadFromFile (const char *data)
 		}
 		else if (!strcmp (PR_GetString (ent->v.classname), "trigger_changelevel"))
 		{
+			ED_Print_JSON (ent, ap_item_count);
 			uint64_t loc_hash = generate_hash (ent->v.absmax[0], ent->v.absmax[1], ent->v.absmax[2], PR_GetString (ent->v.classname));
 			if (!AP_DEBUG_SPAWN && (ap_free_collected_edicts (loc_hash, "exits") || !ap_replace_edict (loc_hash, "exits"))) {
 				remove_after[remove_array_index] = ent;
@@ -2815,8 +2816,11 @@ void ED_Print_JSON (edict_t* ed, int ap_item_count)
 		Con_SafePrintf ("\"uuid\": %zu, ", generate_hash (ed->v.origin[0], ed->v.origin[1], ed->v.origin[2], classname));
 		if (AP_DEBUG_SPAWN) ap_debug_add_edict_to_lut (generate_hash (ed->v.origin[0], ed->v.origin[1], ed->v.origin[2], classname), formatted_string);
 	}
-	
-	Con_SafePrintf ("\"density\": 0},\n");
+	if (((int)ed->v.spawnflags & (SPAWNFLAG_NOT_EASY | SPAWNFLAG_NOT_MEDIUM | SPAWNFLAG_NOT_HARD)) == (SPAWNFLAG_NOT_EASY | SPAWNFLAG_NOT_MEDIUM | SPAWNFLAG_NOT_HARD))
+	{
+		Con_SafePrintf ("\"density\": 5},\n");
+	}
+	else Con_SafePrintf ("\"density\": 0},\n");
 	return;
 }
 
