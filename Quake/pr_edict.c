@@ -1548,29 +1548,29 @@ void ED_LoadFromFile (const char *data)
 			if ( ((int)ent->v.spawnflags & (SPAWNFLAG_NOT_EASY | SPAWNFLAG_NOT_MEDIUM | SPAWNFLAG_NOT_HARD)) == (SPAWNFLAG_NOT_EASY | SPAWNFLAG_NOT_MEDIUM | SPAWNFLAG_NOT_HARD))
 			{
 				if (!Q_strncmp (classname, "func_", 5) || !Q_strcmp (classname, "info_teleport_destination") || !Q_strncmp (classname, "trigger_", 8) || !Q_strncmp (classname, "path_", 5)) {
-					//ap_printf ("Freeing DM Spawn: %s (%i)\n", PR_GetString (ent->v.classname), NUM_FOR_EDICT (ent));
+					ap_printfd ("Freeing DM Spawn: %s (%i)\n", PR_GetString (ent->v.classname), NUM_FOR_EDICT (ent));
 					remove_after[remove_array_index] = ent;
 					remove_array_index++;
 					continue;
 				}
-				//else ap_printf ("DM Spawn: %s (%i): %i\n", PR_GetString (ent->v.classname), NUM_FOR_EDICT (ent), (int)ent->v.spawnflags);
+				else ap_printfd ("DM Spawn: %s (%i): %i\n", PR_GetString (ent->v.classname), NUM_FOR_EDICT (ent), (int)ent->v.spawnflags);
 			}
 			// Always continue with items/weapons even if the skill requirement is not met
 			else if ((!strncmp (PR_GetString (ent->v.classname), "item_", 5) || !strncmp (PR_GetString (ent->v.classname), "weapon_", 7)))
 			{
-				//ap_printf ("Spawned consistent: %s (%i): %i\n", PR_GetString (ent->v.classname), NUM_FOR_EDICT(ent), (int)ent->v.spawnflags);
-				//ap_printf ("Not Easy:%i Not Medium:%i Not Hard:%i\n", ((int)ent->v.spawnflags & SPAWNFLAG_NOT_EASY), ((int)ent->v.spawnflags & SPAWNFLAG_NOT_MEDIUM), ((int)ent->v.spawnflags & SPAWNFLAG_NOT_HARD));
+				ap_printfd ("Spawned consistent: %s (%i): %i\n", PR_GetString (ent->v.classname), NUM_FOR_EDICT(ent), (int)ent->v.spawnflags);
+				ap_printfd ("Not Easy:%i Not Medium:%i Not Hard:%i\n", ((int)ent->v.spawnflags & SPAWNFLAG_NOT_EASY), ((int)ent->v.spawnflags & SPAWNFLAG_NOT_MEDIUM), ((int)ent->v.spawnflags & SPAWNFLAG_NOT_HARD));
 			}
 			else 
 			{
 				// Make monsters etc. adhere to skill level 
 				if (!Q_strncmp (classname, "func_", 5) || !Q_strncmp (classname, "monster_", 8)  || !Q_strncmp (classname, "trap_", 5) || !Q_strncmp (classname, "path_", 5)) {
-					//ap_printf ("Skill level mismatch spawn removed %s (%i) %f\n", PR_GetString (ent->v.classname), NUM_FOR_EDICT (ent), ent->v.spawnflags);
+					ap_printfd ("Skill level mismatch spawn removed %s (%i) %f\n", PR_GetString (ent->v.classname), NUM_FOR_EDICT (ent), ent->v.spawnflags);
 					remove_after[remove_array_index] = ent;
 					remove_array_index++;
 					continue;
 				}
-				//else ap_printf ("Skill level mismatch spawn enforced %s (%i)\n", PR_GetString (ent->v.classname), NUM_FOR_EDICT (ent));
+				else ap_printfd ("Skill level mismatch spawn enforced %s (%i)\n", PR_GetString (ent->v.classname), NUM_FOR_EDICT (ent));
 			}
 		}
 		// always remove func_bossgate
@@ -1626,8 +1626,9 @@ void ED_LoadFromFile (const char *data)
 				func = ED_FindFunction ("item_ap");
 
 			// Make sure to free already collected edicts
-			
-			if (ap_free_collected_edicts (loc_hash, "items")) {
+			// but never free sigils
+			if (!strcmp (PR_GetString (ent->v.classname), "item_sigil")) {}
+			else if (ap_free_collected_edicts (loc_hash, "items")) {
 				//ap_printfd ("Marking collected edict %s (%i)\n", PR_GetString (ent->v.classname), ap_item_count);
 				remove_after[remove_array_index] = ent;
 				remove_array_index++;
@@ -1660,13 +1661,13 @@ void ED_LoadFromFile (const char *data)
 
 		pr_global_struct->self = EDICT_TO_PROG(ent);
 		PR_ExecuteProgram (func - qcvm->functions);
-		// check this data after spawn
+		// [ap] check this data after spawn
 		if (!strcmp (PR_GetString (ent->v.classname), "trigger_secret")) {
 			ED_Print_JSON (ent, ap_item_count);
 			// Make sure to free already collected edicts
 			uint64_t loc_hash = generate_hash (ent->v.absmax[0], ent->v.absmax[1], ent->v.absmax[2], PR_GetString (ent->v.classname));
-			// Free unused secrets / changelevel triggers
-			if (!AP_DEBUG_SPAWN && (ap_free_collected_edicts (loc_hash, "secrets") || !ap_replace_edict (loc_hash, "secrets"))) {
+			// Free unused secrets
+			if (!AP_DEBUG_SPAWN && (ap_free_collected_edicts (loc_hash, "secrets") || ap_replace_edict (loc_hash, "secrets") == 0 )) {
 				//ap_printfd ("Marking collected secret %s (%i)\n", PR_GetString (ent->v.classname), ap_item_count);
 				remove_after[remove_array_index] = ent;
 				remove_array_index++;
@@ -1676,7 +1677,7 @@ void ED_LoadFromFile (const char *data)
 		{
 			ED_Print_JSON (ent, ap_item_count);
 			uint64_t loc_hash = generate_hash (ent->v.absmax[0], ent->v.absmax[1], ent->v.absmax[2], PR_GetString (ent->v.classname));
-			if (!AP_DEBUG_SPAWN && (ap_free_collected_edicts (loc_hash, "exits") || !ap_replace_edict (loc_hash, "exits"))) {
+			if (!AP_DEBUG_SPAWN && (ap_free_collected_edicts (loc_hash, "exits") || ap_replace_edict (loc_hash, "exits") == 0)) {
 				remove_after[remove_array_index] = ent;
 				remove_array_index++;
 			}
@@ -1688,7 +1689,7 @@ void ED_LoadFromFile (const char *data)
 	// [ap] remove entities that don't belong to the current skill
 	for (int i = 0; i < remove_array_index; i++) {
 		edict_t* remove_ent = (edict_t*)remove_after[i];
-		//ap_printfd ("Removing after: %s (%i) %f\n", PR_GetString (remove_ent->v.classname),NUM_FOR_EDICT (remove_ent), remove_ent->v.spawnflags);
+		ap_printfd ("Removing after: %s (%i) %f\n", PR_GetString (remove_ent->v.classname),NUM_FOR_EDICT (remove_ent), remove_ent->v.spawnflags);
 		ED_Free (remove_ent);
 	}
 }

@@ -1533,6 +1533,10 @@ void SCR_DrawEdictInfo (void)
 				else loc_hash = generate_hash (ed->baseline.origin[0], ed->baseline.origin[1], ed->baseline.origin[2], classname);
 				
 				char* ap_loc_name = edict_get_loc_name (loc_hash, "items");
+				if (AP_DEBUG_SPAWN) {
+					char* sub_str = extract_bracketed_part (ap_loc_name);
+					set_clipboard_text (sub_str);
+				}
 				VEC_CLEAR (scr_edictoverlaystrings);
 				MultiString_Append (&scr_edictoverlaystrings, "");
 				MultiString_Append (&scr_edictoverlaystrings, va ("%s", ap_loc_name));

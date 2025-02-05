@@ -1061,7 +1061,7 @@ void SV_Physics_Client (edict_t	*ent, int num)
 		// trigger_secret can be activated by other triggers
 		// this is not checked in C code so I hooked into QuakeC
 		val = GetEdictFieldValueByName (sv_player, "new_secret");
-		//Con_SafePrintf ("%f", val->vector[0]);
+		//Con_SafePrintf ("%f\n", val->vector[0]);
 		if (val->_float > 0) {
 			val->_float = 0.0;
 			val = GetEdictFieldValueByName (sv_player, "secret_coords");

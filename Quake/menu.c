@@ -1966,13 +1966,28 @@ void M_Maps_Draw (void)
 			// Draw individual level stats
 			if (!AP_DEBUG_SPAWN) {
 				q_snprintf (buffer, sizeof (buffer), "%i/%i", item_stats->item_count, item_stats->total);
-				//M_PrintWhite ((x + j * 8) + 330, y + i * gap_size, buffer);
+				if (item_stats->item_count >= item_stats->total) {
+					size_t len = strlen (buffer);
+					for (size_t j = 0; j < len; j++) {
+						buffer[j] ^= 128;
+					}
+				}
 				M_PrintWhite ((x + 4 * 8) + 328, y + i * gap_size, buffer);
 				q_snprintf (buffer, sizeof (buffer), "%i/%i", secret_stats->item_count, secret_stats->total);
-				//M_PrintWhite ((x + j * 8) + 390, y + i * gap_size, buffer);
+				if (secret_stats->item_count >= secret_stats->total) {
+					size_t len = strlen (buffer);
+					for (size_t j = 0; j < len; j++) {
+						buffer[j] ^= 128;
+					}
+				}
 				M_PrintWhite ((x + 4 * 8) + 394, y + i * gap_size, buffer);
 				q_snprintf (buffer, sizeof (buffer), "%i/%i", exit_stats->item_count, exit_stats->total);
-				//M_PrintWhite ((x + j * 8) + 450, y + i * gap_size, buffer);
+				if (exit_stats->item_count >= exit_stats->total) {
+					size_t len = strlen (buffer);
+					for (size_t j = 0; j < len; j++) {
+						buffer[j] ^= 128;
+					}
+				}
 				M_PrintWhite ((x + 4 * 8) + 451, y + i * gap_size, buffer);
 			}
 

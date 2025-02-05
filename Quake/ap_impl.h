@@ -215,3 +215,7 @@ VictoryStats* ap_get_totalcollected (const char* mapname, char* loc_type);
 extern int AP_IsLocChecked (uint64_t loc_hash, char* loc_type);
 void ap_save_itemcount (uint64_t loc_hash, uint16_t in_count);
 uint16_t* ap_get_itemcount (uint64_t loc_hash);
+
+// helpers
+int set_clipboard_text (const char* text);
+char* extract_bracketed_part (const char* str);

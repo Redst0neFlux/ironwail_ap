@@ -175,7 +175,7 @@ GHashTable* ap_itemcount_map = NULL;
 
 int ap_received_scout_info = 0;
 
-uint64_t always_spawn_edicts_array[1] = { 3047032649193967426 }; // "e1m7 Sigil (22)"
+uint64_t always_spawn_edicts_array[1] = { 0 };
 
 GHashTable* ability_unlocks;
 static GString* remote_id_checksum;
@@ -524,6 +524,77 @@ void ap_remaining_exits (uint16_t* collected, uint16_t* total, char* mapname)
 }
 
 // Helpers
+char* extract_bracketed_part (const char* str) {
+	char* start = strchr (str, '(');
+	if (start == NULL) {
+		return NULL; // No opening bracket found
+	}
+
+	char* end = strchr (start + 1, ')');
+	if (end == NULL) {
+		return NULL; // No closing bracket found
+	}
+
+	size_t len = end - start + 1; // Calculate length including brackets
+	char* result = (char*)malloc (len + 1); // Allocate memory for result
+	if (result == NULL) {
+		return NULL; // Memory allocation failed
+	}
+
+	strncpy (result, start, len); // Copy the bracketed part
+	result[len] = '\0'; // Add null terminator
+
+	return result;
+}
+
+int set_clipboard_text (const char* text) {
+
+	if (!OpenClipboard (NULL)) {
+		return 1;
+	}
+
+	HANDLE hData = GetClipboardData (CF_TEXT);
+	if (hData == NULL) {
+		CloseClipboard ();
+		return 1;
+	}
+
+	char* clipboard_text = (char*)GlobalLock (hData);
+	if (clipboard_text == NULL) {
+		CloseClipboard ();
+		return 1;
+	}
+
+	if (strcmp (clipboard_text, text) != 0) {
+		size_t len = strlen (text) + 1;
+		HGLOBAL hMem = GlobalAlloc (GMEM_MOVEABLE, len);
+		if (!hMem) {
+			GlobalUnlock (hData);
+			CloseClipboard ();
+			return 1;
+		}
+
+		char* pMem = (char*)GlobalLock (hMem);
+		if (!pMem) {
+			GlobalFree (hMem);
+			GlobalUnlock (hData);
+			CloseClipboard ();
+			return 1;
+		}
+
+		strcpy (pMem, text);
+		EmptyClipboard ();
+		SetClipboardData (CF_TEXT, hMem);
+
+		GlobalUnlock (hMem);
+	}
+
+	GlobalUnlock (hData);
+	CloseClipboard ();
+
+	return 0;
+}
+
 uint64_t generate_hash (float f1, float f2, float f3, const char* itemname) {
 
 	int32_t i1 = (int32_t)floorf (f1);
@@ -799,7 +870,6 @@ bool AP_CheckVictory (void)
 
 	if (all_reached)
 	{
-		// Unlock end map
 		// Send victory state to AP Server
 		reached_goal = true;
 		json_t* player_obj = json_object_get (ap_game_state->dynamic_player, "player");
@@ -807,7 +877,7 @@ bool AP_CheckVictory (void)
 		json_object_set (player_obj, "victory", json_integer(1));
 		ap_game_state->need_sync = true;
 		AP_StoryComplete ();
-		g_queue_push_tail (ap_message_queue, _strdup ("Goal reached!\n"));
+		//g_queue_push_tail (ap_message_queue, _strdup ("Goal reached!\n"));
 	}
 	return reached_goal;
 }

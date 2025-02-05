@@ -1618,7 +1618,7 @@ static void R_ShowBoundingBoxes (void)
 	}
 
 	// Draw all the matching edicts
-	// [ap] check if highlight
+	// [ap] check if hint highlight
 
 	for (i = 0; i < (int) VEC_SIZE (bbox_edicts); i++)
 	{
