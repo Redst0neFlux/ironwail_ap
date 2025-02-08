@@ -2795,14 +2795,17 @@ void ED_Print_JSON (edict_t* ed, int ap_item_count)
 	Con_SafePrintf ("\"classname\": \"%s\", ", classname);
 	//Con_SafePrintf ("\"spawnflags\": %s, ", spawnflags);
 
-	//TODO: REMOVE
-	int buffer_size = strlen (itemname) + 10; // Estimate buffer size
+	int buffer_size = strlen (itemname) + 15; // Estimate buffer size
 	char* formatted_string = (char*)malloc (buffer_size);
 	if (formatted_string == NULL) {
 		printf ("Memory allocation failed.\n");
 	}
-	if (formatted_string) sprintf (formatted_string, "%s (%i)", itemname, ap_item_count);
-	// REMOVE END
+	if (formatted_string) {
+		sprintf (formatted_string, "%s (%i)", itemname, ap_item_count);
+		if (AP_DEBUG_SPAWN && (((int)ed->v.spawnflags & (SPAWNFLAG_NOT_EASY | SPAWNFLAG_NOT_MEDIUM | SPAWNFLAG_NOT_HARD)) == (SPAWNFLAG_NOT_EASY | SPAWNFLAG_NOT_MEDIUM | SPAWNFLAG_NOT_HARD)))
+			strcat (formatted_string, " MP");
+	}
+
 	if (!strcmp(classname, "trigger_secret") || !strcmp (classname, "trigger_changelevel")) {
 		//Con_SafePrintf ("\"x\": %f,", ed->v.absmax[0]);
 		//Con_SafePrintf ("\"y\": %f, ", ed->v.absmax[1]);

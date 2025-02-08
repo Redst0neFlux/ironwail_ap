@@ -12,6 +12,8 @@ build/
 update_submodule.txt
 *.sav
 Windows/VisualStudio/id1
+Windows/VisualStudio/hipnotic
+Windows/VisualStudio/rogue
 *.txt
 *.json
 *.cache

@@ -179,10 +179,7 @@ void SV_Impact (edict_t *e1, edict_t *e2)
 			Con_DPrintf ("sv_impact E2 Touch of %s and %s\n", PR_GetString (e1->v.classname), PR_GetString (e2->v.classname));
 			//ED_Print (e2);
 		}
-		//[ap] dont execute door/button touch if door/button think is disabled
-		if (!ap_can_door() && !strcmp (PR_GetString (e2->v.classname), "door")) {}
-		else if (!ap_can_button() && !strcmp (PR_GetString (e2->v.classname), "func_button")) {}
-		else PR_ExecuteProgram (e2->v.touch);
+		PR_ExecuteProgram (e2->v.touch);
 	}
 
 	pr_global_struct->self = old_self;
@@ -971,7 +968,7 @@ void SV_Physics_Client (edict_t	*ent, int num)
 		}
 		// give inventory items
 		sv_player->v.items = (int)sv_player->v.items | ap_inventory_flags;
-
+		
 		// give ammo
 		if (ap_give_ammo) {
 			sv_player->v.ammo_shells = (int)sv_player->v.ammo_shells + ap_give_ammo_arr[0];
@@ -1007,6 +1004,18 @@ void SV_Physics_Client (edict_t	*ent, int num)
 
 		// check inventory uses and refresh flags
 		eval_t* val;
+
+		// sync can_door and can_button
+		if (ap_can_door ()) {
+			val = GetEdictFieldValueByName (sv_player, "can_door");
+			if (val) val->_float = 1;
+		}
+
+		if (ap_can_button ()) {
+			val = GetEdictFieldValueByName (sv_player, "can_button");
+			if (val) val->_float = 1;
+		}
+
 		int	v = ap_get_quakec_apflag (); // [ap] return quakec flag to be set
 		val = GetEdictFieldValueByName (sv_player, "ap_items");
 		if (val) val->_float = v;

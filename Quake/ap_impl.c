@@ -404,7 +404,7 @@ extern int ap_replace_edict (uint64_t loc_hash, char* loc_type)
 	json_object_foreach (item_locations, k_item, v_item) {
 		uint64_t item_id = json_integer_value (json_object_get (v_item, "id"));
 		if (item_id == item_location) {
-			if (AP_LOCATION_PROGRESSION (item_location)) 
+			if (AP_LOCATION_PROGRESSION (item_location) || AP_LOCATION_TRAP(item_location)) 
 				return 2;
 			return 1;
 		}
@@ -649,6 +649,11 @@ char* touched_edicts_list[1024] = { NULL };
 extern void add_touched_edict (uint64_t loc_hash, char* loc_type)
 {
 	char* out_str = edict_get_loc_name (loc_hash, loc_type);
+	// Remove MP suffix for deathmatch spawn locs
+	size_t len = strlen (out_str);
+	if (strlen (out_str) >= 3 && strcmp (out_str + len - 3, " MP") == 0) {
+		out_str[len - 3] = '\0';
+	}
 
 	if (touched_edicts_count >= 1024) {
 		return;
