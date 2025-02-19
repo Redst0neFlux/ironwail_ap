@@ -100,6 +100,8 @@ extern int ap_fresh_map;
 
 extern int ap_scoreboard;
 
+extern char* ap_current_map;
+
 #define AP_LOCATION_CHECK_MASK(x, y) (AP_VALID_LOCATION_ID(x) && ((ap_locations[x].state & y) == y))
 #define AP_VALID_LOCATION(x) (AP_LOCATION_CHECK_MASK(x, AP_LOC_USED))
 #define AP_LOCATION_CHECKED(x) (AP_LOCATION_CHECK_MASK(x, (AP_LOC_USED | AP_LOC_CHECKED)))

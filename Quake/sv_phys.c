@@ -165,7 +165,7 @@ void SV_Impact (edict_t *e1, edict_t *e2)
 		pr_global_struct->self = EDICT_TO_PROG(e1);
 		pr_global_struct->other = EDICT_TO_PROG(e2);
 		if (!strcmp (PR_GetString (e1->v.classname), "player")) { 
-			Con_DPrintf ("sv_impact E1 Touch of %s and %s\n", PR_GetString (e1->v.classname), PR_GetString (e2->v.classname));
+			//Con_DPrintf ("sv_impact E1 Touch of %s and %s\n", PR_GetString (e1->v.classname), PR_GetString (e2->v.classname));
 			//ED_Print (e2);
 		}
 		PR_ExecuteProgram (e1->v.touch);
@@ -176,7 +176,7 @@ void SV_Impact (edict_t *e1, edict_t *e2)
 		pr_global_struct->self = EDICT_TO_PROG(e2);
 		pr_global_struct->other = EDICT_TO_PROG(e1);
 		if (!strcmp (PR_GetString (e1->v.classname), "player")) { 
-			Con_DPrintf ("sv_impact E2 Touch of %s and %s\n", PR_GetString (e1->v.classname), PR_GetString (e2->v.classname));
+			//Con_DPrintf ("sv_impact E2 Touch of %s and %s\n", PR_GetString (e1->v.classname), PR_GetString (e2->v.classname));
 			//ED_Print (e2);
 		}
 		PR_ExecuteProgram (e2->v.touch);
@@ -982,6 +982,10 @@ void SV_Physics_Client (edict_t	*ent, int num)
 			if (sv_player->v.weapon == IT_LIGHTNING) sv_player->v.currentammo = sv_player->v.ammo_cells;
 
 			ap_give_ammo = 0;
+			for (int i = 0; i < AMMO_MAX; i++)
+			{
+				ap_give_ammo_arr[i] = 0;
+			}
 		}
 
 		//clamp max ammo
@@ -1010,15 +1014,28 @@ void SV_Physics_Client (edict_t	*ent, int num)
 			val = GetEdictFieldValueByName (sv_player, "can_door");
 			if (val) val->_float = 1;
 		}
+		else if (AP_DEBUG_SPAWN) {
+			val = GetEdictFieldValueByName (sv_player, "can_door");
+			if (val) val->_float = 0;
+		}
 
 		if (ap_can_button ()) {
 			val = GetEdictFieldValueByName (sv_player, "can_button");
 			if (val) val->_float = 1;
 		}
+		else if (AP_DEBUG_SPAWN) {
+			val = GetEdictFieldValueByName (sv_player, "can_button1");
+			if (val) val->_float = 0;
+		}
 
 		int	v = ap_get_quakec_apflag (); // [ap] return quakec flag to be set
 		val = GetEdictFieldValueByName (sv_player, "ap_items");
 		if (val) val->_float = v;
+
+		if (AP_DEBUG_SPAWN) { 
+			ap_set_inventory_to_max ();
+			ap_give_inv = 1;
+		}
 
 		if (ap_give_inv)
 		{
@@ -1089,7 +1106,7 @@ void SV_Physics_Client (edict_t	*ent, int num)
 			sv_player->v.health = 20;
 		}//TODO: sv_autoload 0 does nothing :(
 		if (ap_active_traps[1]) {
-			Cbuf_AddText ("impulse 220\n");
+			Cbuf_AddText ("impulse 237\n");
 			ap_fresh_map = 1;
 		}
 		// check if we have killed shub and send the changelevel item

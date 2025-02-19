@@ -2046,6 +2046,9 @@ void SV_SpawnServer (const char *server)
 	pr_global_struct->serverflags = svs.serverflags;
 
 	// [ap]
+	if (ap_current_map && strcmp (sv.name, ap_current_map)) {
+		ap_fresh_map = 1;
+	}
 	ap_on_map_load (sv.name);
 
 	ED_LoadFromFile (sv.worldmodel->entities);

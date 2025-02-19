@@ -5108,13 +5108,13 @@ static const menukeybind_t menubinds[] =
 	{"screenshot",		"Screenshot",			KDM_ANY},
 	{"",				"",						KDM_ANY},
 	// [ap] Added keybinds
-	{"impulse 200",		"AP Quad Damage",		KDM_ANY},
-	{"impulse 201",		"AP Invuln",			KDM_ANY},
-	{"impulse 202",		"AP Biosuit",			KDM_ANY},
-	{"impulse 203",		"AP Invis",				KDM_ANY},
-	{"impulse 204",		"AP Backpack",			KDM_ANY},
-	{"impulse 205",		"AP Medkit",			KDM_ANY},
-	{"impulse 206",		"AP Armor",				KDM_ANY},
+	{"impulse 230",		"AP Quad Damage",		KDM_ANY},
+	{"impulse 231",		"AP Invuln",			KDM_ANY},
+	{"impulse 232",		"AP Biosuit",			KDM_ANY},
+	{"impulse 233",		"AP Invis",				KDM_ANY},
+	{"impulse 234",		"AP Backpack",			KDM_ANY},
+	{"impulse 235",		"AP Medkit",			KDM_ANY},
+	{"impulse 236",		"AP Armor",				KDM_ANY},
 	{"automap",			"AP Automap",			KDM_ANY},
 };
 

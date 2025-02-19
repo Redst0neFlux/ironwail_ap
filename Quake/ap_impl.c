@@ -249,7 +249,9 @@ void ap_error (const char* errorMsg, ...)
 
 // Local AP Vars
 uint8_t ap_game_id = 0;
-char* current_map;
+
+// Extern AP Vars
+char* ap_current_map;
 
 // JSON Funcs
 void json_print_sys (const char* key, json_t* j)
@@ -263,7 +265,9 @@ void json_print_sys (const char* key, json_t* j)
 // 
 
 void ap_on_map_load(char* mapname) {
-	current_map = mapname;
+	size_t mapname_len = strlen (mapname) + 1;
+	ap_current_map = (char*)malloc (mapname_len * sizeof (char));
+	if (ap_current_map) strcpy (ap_current_map, mapname);
 	g_hash_table_remove_all (ap_itemcount_map);
 }
 
@@ -358,7 +362,7 @@ static char* uint64_to_char (uint64_t item_id)
 ap_location_t edict_to_ap_locid (uint64_t loc_hash, char* loc_type)
 {
 	json_t* id_data = NULL;
-	json_t* level_data = level_data = json_object_get (json_object_get (json_object_get (ap_game_config, "locations"), current_map), loc_type);
+	json_t* level_data = level_data = json_object_get (json_object_get (json_object_get (ap_game_config, "locations"), ap_current_map), loc_type);
 	const char* k;
 	json_t* v;
 	json_object_foreach (level_data, k, v)
@@ -390,7 +394,7 @@ int AP_IsLocHinted (uint64_t loc_hash, char* loc_type)
 */
 extern int ap_replace_edict (uint64_t loc_hash, char* loc_type)
 {
-	char* map = current_map;
+	char* map = ap_current_map;
 	json_t* item_locations = json_object_get (json_object_get (json_object_get (ap_game_config, "locations"), map), loc_type);
 	
 	ap_location_t item_location  = edict_to_ap_locid (loc_hash, loc_type);
@@ -954,7 +958,7 @@ void AP_ProcessMessages ()
 // Safe check if an item is scoped to a level
 static bool item_for_level (json_t* info, char* mapfile)
 {
-	if (!current_map) return 0;
+	if (!ap_current_map) return 0;
 	// Check if mapfile name is in location name
 	const char* loc_name = json_string_value(json_object_get (info, "name"));
 	return (strstr (loc_name, mapfile) != NULL);
@@ -962,7 +966,7 @@ static bool item_for_level (json_t* info, char* mapfile)
 
 static bool item_for_current_level (json_t* info)
 {
-	return item_for_level (info, current_map);
+	return item_for_level (info, ap_current_map);
 }
 
 void ap_set_default_inv () {
@@ -971,6 +975,10 @@ void ap_set_default_inv () {
 	{
 		ap_inv_arr[i] = 0;
 		ap_inv_max_arr[i] = 0;
+		if (AP_DEBUG_SPAWN) {
+			ap_inv_arr[i] = 10;
+			ap_inv_max_arr[i] = 10;
+		}
 	}
 	// Clear weapon info
 	for (uint8_t i = 0; i < AMMO_MAX; i++)
