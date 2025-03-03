@@ -30,7 +30,7 @@ If scr_showspeed is enabled:
 |show_speed_x|Change the x coordinates of the speed bar|
 |show_speed_y|Change the y coordinates of the speed bar|
 
-When the following is active, messages will show up in the console if a door/button is blocked.
+When the following is active, messages will show up in the console if a door/button is blocked.  
 The messages have a 2 second cooldown so the player doesn't get spammed.
 |CVAR|Description|
 |---|---|
