@@ -64,7 +64,7 @@ typedef enum
 {
 	AP_LOC_USED = 0x00000001u,  // Set for all locations that are in use in the current shuffle
 	AP_LOC_PROGRESSION = 0x00000010u,  // Set if a progression item is known to be at a location
-	AP_LOC_IMPORTANT = 0x00000020u,  // Set if an item at this location is known to be important
+	AP_LOC_USEFUL = 0x00000020u,  // Set if an item at this location is known to be useful
 	AP_LOC_TRAP = 0x00000040u,  // Set if an item at this location is known to be a trap
 	AP_LOC_SCOUTED = 0x00000100u,  // Set if location has been scouted before. This is done during init to get progression state
 	AP_LOC_HINTED = 0x00000200u,  // Set if item at location is logically known to the user
@@ -183,7 +183,7 @@ extern void ap_on_map_load (char* mapname);
 extern uint64_t* ap_get_key_flags (const char* mapname);
 extern void ap_process_ingame_tic ();
 extern void ap_process_global_tic ();
-extern char* ap_get_latest_message ();
+extern char** ap_get_latest_message ();
 extern int ap_message_pending ();
 extern void ap_sync_inventory ();
 int AP_IsLocHinted (uint64_t loc_hash, char* loc_type);
@@ -222,3 +222,4 @@ uint16_t* ap_get_itemcount (uint64_t loc_hash);
 // helpers
 int set_clipboard_text (const char* text);
 char* extract_bracketed_part (const char* str);
+void ap_free_message_parts_array (char** parts);

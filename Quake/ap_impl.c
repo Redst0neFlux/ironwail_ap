@@ -47,6 +47,8 @@ int ap_skill = 0;
 int ap_shell_recharge = 0;
 int ap_powerup_recharge = 0;
 
+int ap_traps_as_progressive = 0;
+
 int ap_shub_defeated = 0;
 
 int ap_fresh_map = 0;
@@ -408,7 +410,7 @@ extern int ap_replace_edict (uint64_t loc_hash, char* loc_type)
 	json_object_foreach (item_locations, k_item, v_item) {
 		uint64_t item_id = json_integer_value (json_object_get (v_item, "id"));
 		if (item_id == item_location) {
-			if (AP_LOCATION_PROGRESSION (item_location) || AP_LOCATION_TRAP(item_location)) 
+			if (AP_LOCATION_PROGRESSION (item_location) || (AP_LOCATION_TRAP(item_location) && ap_traps_as_progressive)) 
 				return 2;
 			return 1;
 		}
@@ -528,6 +530,78 @@ void ap_remaining_exits (uint16_t* collected, uint16_t* total, char* mapname)
 }
 
 // Helpers
+char** create_message_parts_array (const char* full_message, const char* part1, const char* part2, const char* part3, const char* part4, const char* part5) {
+	char** parts = (char**)malloc (6 * sizeof (char*));
+	if (parts == NULL) {
+		return NULL; // Allocation failed
+	}
+
+	parts[0] = full_message ? strdup (full_message) : NULL;
+	parts[1] = part1 ? strdup (part1) : NULL;
+	parts[2] = part2 ? strdup (part2) : NULL;
+	parts[3] = part3 ? strdup (part3) : NULL;
+	parts[4] = part4 ? strdup (part4) : NULL;
+	parts[5] = part5 ? strdup (part5) : NULL;
+
+	return parts;
+}
+
+void ap_free_message_parts_array (char** parts) {
+	if (parts == NULL) {
+		return;
+	}
+
+	for (int i = 0; i < 6; i++) {
+		free (parts[i]);
+	}
+	free (parts);
+}
+
+const char* ap_check_for_item_string (const char* input_string) {
+	if (!input_string) return NULL;
+
+	const char* target_strings[] = {
+		"item_armor1",
+		"item_armor2",
+		"item_armorInv",
+		"weapon_lightning",
+		"weapon_nailgun",
+		"weapon_supernailgun",
+		"weapon_supershotgun",
+		"weapon_grenadelauncher",
+		"weapon_rocketlauncher",
+		"item_health (Small Medkit)",
+		"item_cells",
+		"item_rockets",
+		"item_shells",
+		"item_spikes",
+		"item_artifact_envirosuit",
+		"item_artifact_invisibility",
+		"item_artifact_invulnerability",
+		"item_artifact_super_damage",
+		"item_key1",
+		"item_key2",
+		"item_sigil",
+		"item_weapon",
+		"item_artifact_empathy_shields",
+		"item_hornofconjuring",
+		"item_artifact_wetsuit",
+		"weapon_laser_gun",
+		"weapon_mjolnir",
+		"weapon_proximity_gun"
+	};
+
+	size_t num_targets = sizeof (target_strings) / sizeof (target_strings[0]);
+
+	for (size_t i = 0; i < num_targets; i++) {
+		if (strstr (input_string, target_strings[i]) != NULL) {
+			return target_strings[i]; // Return pointer to the matched string
+		}
+	}
+
+	return NULL; // No match found
+}
+
 char* extract_bracketed_part (const char* str) {
 	char* start = strchr (str, '(');
 	if (start == NULL) {
@@ -653,6 +727,7 @@ char* touched_edicts_list[1024] = { NULL };
 extern void add_touched_edict (uint64_t loc_hash, char* loc_type)
 {
 	char* out_str = edict_get_loc_name (loc_hash, loc_type);
+	if (!out_str) return;
 	// Remove MP suffix for deathmatch spawn locs
 	size_t len = strlen (out_str);
 	if (strlen (out_str) >= 3 && strcmp (out_str + len - 3, " MP") == 0) {
@@ -764,7 +839,7 @@ void AP_LocationInfo (GArray* scouted_items_in)
 		if (item->flags & 0b001)
 			ap_locations[loc].state |= AP_LOC_PROGRESSION;
 		if (item->flags & 0b010)
-			ap_locations[loc].state |= AP_LOC_IMPORTANT;
+			ap_locations[loc].state |= AP_LOC_USEFUL;
 		if (item->flags & 0b100)
 			ap_locations[loc].state |= AP_LOC_TRAP;
 	}
@@ -919,6 +994,7 @@ void AP_ProcessMessages ()
 	{
 		struct AP_Message* msg = AP_GetLatestMessage ();
 		GString* print_msg = g_string_new (NULL);
+		char** message_parts = NULL;
 
 		switch (msg->type)
 		{
@@ -926,12 +1002,14 @@ void AP_ProcessMessages ()
 			{
 				struct AP_ItemSendMessage* out_msg = AP_GetLatestMessage ();
 				g_string_printf (print_msg, "%s was sent to %s\n", out_msg->item, out_msg->recvPlayer);
+				message_parts = create_message_parts_array (print_msg->str, out_msg->item, out_msg->recvPlayer, NULL, NULL, NULL);
 				break;
 			}
 			case ItemRecv:
 			{
 				struct AP_ItemRecvMessage* out_msg = AP_GetLatestMessage ();
 				g_string_printf (print_msg, "Received %s from %s\n", out_msg->item, out_msg->sendPlayer);
+				message_parts = create_message_parts_array (print_msg->str, out_msg->item, out_msg->sendPlayer, NULL, NULL, NULL);
 				break;
 			}
 			case Hint:
@@ -940,16 +1018,19 @@ void AP_ProcessMessages ()
 				struct AP_HintMessage* out_msg = AP_GetLatestMessage ();
 				char* status = out_msg->checked ? "(Checked)" : "(Unchecked)";
 				g_string_printf (print_msg, "%s from %s for %s is at %s %s\n", out_msg->item, out_msg->sendPlayer, out_msg->recvPlayer, out_msg->location, status);
+				message_parts = create_message_parts_array (print_msg->str, out_msg->item, out_msg->sendPlayer, out_msg->recvPlayer, out_msg->location, status);
 				break;
 			}
 			default:
 			{
 				g_string_printf (print_msg, msg->text ) ;
 				g_string_append (print_msg, "\n");
+				message_parts = create_message_parts_array (print_msg->str, NULL, NULL, NULL, NULL, NULL);
 				break;
 			}
 		}
-		g_queue_push_tail (ap_message_queue, print_msg->str);
+		//g_queue_push_tail (ap_message_queue, print_msg->str);
+		g_queue_push_tail (ap_message_queue, message_parts);
 
 		AP_ClearLatestMessage ();
 	}
@@ -1208,9 +1289,9 @@ void ap_sync_inventory () {
 	}
 }
 
-extern char* ap_get_latest_message () {
+extern char** ap_get_latest_message () {
 	if (!g_queue_is_empty (ap_message_queue)) {
-		return g_queue_pop_head (ap_message_queue);
+		return (char**)g_queue_pop_head (ap_message_queue);
 	}
 	return NULL;
 }
@@ -1664,6 +1745,9 @@ static void set_settings (json_t* jobj)
 		}
 		if (!strcmp (k_settingkey, "powerup_recharge")) {
 			ap_powerup_recharge = (int)json_integer_value (v_settingdata);
+		}
+		if (!strcmp (k_settingkey, "traps_as_progressive")) {
+			ap_traps_as_progressive = (int)json_integer_value (v_settingdata);
 		}
 	}
 }

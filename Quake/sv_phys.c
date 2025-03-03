@@ -943,6 +943,9 @@ void SV_WalkMove (edict_t *ent)
 	}
 }
 
+// [ap] button/door message cvars
+extern cvar_t ap_printdoorblocked;
+extern cvar_t ap_printbuttonblocked;
 
 /*
 ================
@@ -963,9 +966,22 @@ void SV_Physics_Client (edict_t	*ent, int num)
 	if (sv_player && cls.signon == SIGNONS) {
 		// send latest messages
 		while (ap_message_pending ()) {
-			char* message = ap_get_latest_message ();
-			Con_SafePrintf (message);
+			char** message_parts = ap_get_latest_message ();
+			char* buf = NULL;
+			if (message_parts != NULL) {
+				size_t message_length = strlen (message_parts[0]);
+				if (message_parts[1] != NULL) buf = (char*)malloc ((message_length + 1) * sizeof (char));
+				for (int i = 1; i < 6; i++) {
+					if (message_parts[i] != NULL) {
+						if (i == 1) COM_TintSubstring (message_parts[0], message_parts[i], buf, strlen (message_parts[0]));
+						else COM_TintSubstring (buf, message_parts[i], buf, strlen (message_parts[0]));
+					}
+				}
+				if (buf) Con_SafePrintf ("%s\n", buf);
+				else Con_SafePrintf ("%s\n", message_parts[0]);
+			}
 		}
+		
 		// give inventory items
 		sv_player->v.items = (int)sv_player->v.items | ap_inventory_flags;
 		
@@ -1009,6 +1025,13 @@ void SV_Physics_Client (edict_t	*ent, int num)
 		// check inventory uses and refresh flags
 		eval_t* val;
 
+		// set allow/deny for printing door/button messages
+		val = GetEdictFieldValueByName (sv_player, "ap_print_door_blocked");
+		val->_float = ap_printdoorblocked.value;
+
+		val = GetEdictFieldValueByName (sv_player, "ap_print_button_blocked");
+		val->_float = ap_printbuttonblocked.value;
+
 		// sync can_door and can_button
 		if (ap_can_door ()) {
 			val = GetEdictFieldValueByName (sv_player, "can_door");
@@ -1024,7 +1047,7 @@ void SV_Physics_Client (edict_t	*ent, int num)
 			if (val) val->_float = 1;
 		}
 		else if (AP_DEBUG_SPAWN) {
-			val = GetEdictFieldValueByName (sv_player, "can_button1");
+			val = GetEdictFieldValueByName (sv_player, "can_button");
 			if (val) val->_float = 0;
 		}
 
@@ -1111,6 +1134,8 @@ void SV_Physics_Client (edict_t	*ent, int num)
 		}
 		// check if we have killed shub and send the changelevel item
 		if (CL_InCutscene () && !strcmp (sv.name, "end"))
+			AP_CheckLocation (1717686674820885145, "exits");
+		else if (CL_InCutscene () && hipnotic && !strcmp (sv.name, "hipend"))
 			AP_CheckLocation (1717686674820885145, "exits");
 	}
 	

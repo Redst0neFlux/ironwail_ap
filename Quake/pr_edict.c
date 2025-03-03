@@ -2822,9 +2822,9 @@ void ED_Print_JSON (edict_t* ed, int ap_item_count)
 	}
 	if (((int)ed->v.spawnflags & (SPAWNFLAG_NOT_EASY | SPAWNFLAG_NOT_MEDIUM | SPAWNFLAG_NOT_HARD)) == (SPAWNFLAG_NOT_EASY | SPAWNFLAG_NOT_MEDIUM | SPAWNFLAG_NOT_HARD))
 	{
-		Con_SafePrintf ("\"density\": 5},\n");
+		Con_SafePrintf ("\"mp\": 1},\n");
 	}
-	else Con_SafePrintf ("\"density\": 0},\n");
+	else Con_SafePrintf ("\"mp\": 0},\n");
 	return;
 }
 

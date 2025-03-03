@@ -102,6 +102,8 @@ cvar_t		ap_shorthud = { "ap_shorthud", "0", CVAR_ARCHIVE };
 cvar_t		ap_alwaysshowunlocks = { "ap_alwaysshowunlocks", "1", CVAR_ARCHIVE };
 cvar_t		ap_alwaysshowchecks = { "ap_alwaysshowchecks", "1", CVAR_ARCHIVE };
 cvar_t		ap_alwaysshowinventory = { "ap_alwaysshowinventory", "1", CVAR_ARCHIVE };
+cvar_t		ap_printdoorblocked = { "ap_printdoorblocked", "0", CVAR_ARCHIVE };
+cvar_t		ap_printbuttonblocked = { "ap_printbuttonblocked", "0", CVAR_ARCHIVE };
 
 //johnfitz
 cvar_t		scr_usekfont = {"scr_usekfont", "0", CVAR_NONE}; // 2021 re-release
@@ -660,6 +662,8 @@ void SCR_Init (void)
 	Cvar_RegisterVariable (&ap_alwaysshowunlocks);
 	Cvar_RegisterVariable (&ap_alwaysshowchecks);
 	Cvar_RegisterVariable (&ap_alwaysshowinventory);
+	Cvar_RegisterVariable (&ap_printbuttonblocked);
+	Cvar_RegisterVariable (&ap_printdoorblocked);
 	//johnfitz
 	Cvar_RegisterVariable (&scr_usekfont); // 2021 re-release
 	Cvar_SetCallback (&scr_fov, SCR_Callback_refdef);
@@ -1533,7 +1537,7 @@ void SCR_DrawEdictInfo (void)
 				else loc_hash = generate_hash (ed->baseline.origin[0], ed->baseline.origin[1], ed->baseline.origin[2], classname);
 				
 				char* ap_loc_name = edict_get_loc_name (loc_hash, "items");
-				if (AP_DEBUG_SPAWN) {
+				if (AP_DEBUG_SPAWN && ap_loc_name != NULL) {
 					char* sub_str = extract_bracketed_part (ap_loc_name);
 					set_clipboard_text (sub_str);
 				}

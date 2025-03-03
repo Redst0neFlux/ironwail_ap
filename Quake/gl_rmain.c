@@ -1555,8 +1555,8 @@ static void R_ShowBoundingBoxes (void)
 
 	if (focused)
 		VEC_PUSH (bbox_linked, focused);
-
-	if (focused && r_showbboxes_links.value)
+	// [ap] only draw linking arrows if debug is on
+	if (focused && r_showbboxes_links.value && (!ap_can_automap (sv.name) | AP_DEBUG))
 	{
 		// Find outgoing links (entity field references other than .chain)
 		if ((int)r_showbboxes_links.value & SHOWBBOX_LINK_OUTGOING)

@@ -2696,7 +2696,8 @@ static void Host_Loadgame_f (void)
 				}
 				else
 					loc_hash = generate_hash (ent->baseline.origin[0], ent->baseline.origin[1], ent->baseline.origin[2], PR_GetString (ent->v.classname));
-				if (!strcmp (edict_get_loc_name (loc_hash, "items"), "") && ent->baseline.origin[0] == 0.0 && ent->baseline.origin[1] == 0.0 && ent->baseline.origin[2] == 0.0) {
+				char* loc_name = edict_get_loc_name (loc_hash, "items");
+				if (loc_name && !strcmp (loc_name, "") && ent->baseline.origin[0] == 0.0 && ent->baseline.origin[1] == 0.0 && ent->baseline.origin[2] == 0.0) {
 					ED_Free (ent);
 				}
 			}

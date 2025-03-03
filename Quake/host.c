@@ -1338,8 +1338,20 @@ void _Host_Frame (double time)
 	ap_process_global_tic ();
 	// send latest messages
 	while (ap_message_pending ()) {
-		char* message = ap_get_latest_message ();
-		Con_SafePrintf (message);
+		char** message_parts = ap_get_latest_message ();
+		char* buf = NULL;
+		if (message_parts != NULL) {
+			size_t message_length = strlen (message_parts[0]);
+			if (message_parts[1] != NULL) buf = (char*)malloc ((message_length + 1) * sizeof (char));
+			for (int i = 1; i < 6; i++) {
+				if (message_parts[i] != NULL) {
+					if (i == 1) COM_TintSubstring (message_parts[0], message_parts[i], buf, strlen (message_parts[0]));
+					else COM_TintSubstring (buf, message_parts[i], buf, strlen (message_parts[0]));
+				}
+			}
+			if (buf) Con_SafePrintf ("%s\n", buf);
+			else Con_SafePrintf ("%s\n", message_parts[0]);
+		}
 	}
 	host_framecount++;
 }
