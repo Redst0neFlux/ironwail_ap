@@ -1136,7 +1136,7 @@ void SV_Physics_Client (edict_t	*ent, int num)
 		if (CL_InCutscene () && !strcmp (sv.name, "end"))
 			AP_CheckLocation (1717686674820885145, "exits");
 		else if (CL_InCutscene () && hipnotic && !strcmp (sv.name, "hipend"))
-			AP_CheckLocation (1717686674820885145, "exits");
+			AP_CheckLocation (13397806965560897405, "exits");
 	}
 	
 	
