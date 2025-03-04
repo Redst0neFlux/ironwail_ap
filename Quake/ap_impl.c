@@ -966,10 +966,9 @@ bool AP_CheckVictory (void)
 	return reached_goal;
 }
 
-void AP_QueueMessage (char* msg)
+void AP_QueueMessage (char** msg_parts)
 {
-	ap_printf (msg);
-	g_queue_push_tail (ap_message_queue, _strdup(msg));
+	g_queue_push_tail (ap_message_queue, msg_parts);
 }
 
 void AP_ProcessHints ()
@@ -1308,7 +1307,9 @@ void ap_handle_trap (json_t* trap_info, bool triggered) {
 		GString* msg = g_string_new (NULL);
 		g_string_append (msg, trap_name);
 		g_string_append (msg, " triggered!\n");
-		AP_QueueMessage (msg->str);
+		char** message_parts = NULL;
+		message_parts = create_message_parts_array (msg->str, NULL, NULL, NULL, NULL, NULL);
+		AP_QueueMessage (message_parts);
 	}
 
 	// Set trap states
