@@ -985,45 +985,42 @@ void SV_Physics_Client (edict_t	*ent, int num)
 		// give inventory items
 		sv_player->v.items = (int)sv_player->v.items | ap_inventory_flags;
 		
+		// check inventory uses and refresh flags
+		eval_t* val;
+
+		//set max ammo
+		val = GetEdictFieldValueByName (sv_player, "ap_max_shells");
+		val->_float = ap_max_ammo_arr[0];
+
+		val = GetEdictFieldValueByName (sv_player, "ap_max_nails");
+		val->_float = ap_max_ammo_arr[1];
+
+		val = GetEdictFieldValueByName (sv_player, "ap_max_rockets");
+		val->_float = ap_max_ammo_arr[2];
+
+		val = GetEdictFieldValueByName (sv_player, "ap_max_cells");
+		val->_float = ap_max_ammo_arr[3];
+
 		// give ammo
 		if (ap_give_ammo) {
-			sv_player->v.ammo_shells = (int)sv_player->v.ammo_shells + ap_give_ammo_arr[0];
-			sv_player->v.ammo_nails = (int)sv_player->v.ammo_nails + ap_give_ammo_arr[1];
-			sv_player->v.ammo_rockets = (int)sv_player->v.ammo_rockets + ap_give_ammo_arr[2];
-			sv_player->v.ammo_cells = (int)sv_player->v.ammo_cells + ap_give_ammo_arr[3];
+			val = GetEdictFieldValueByName (sv_player, "ap_shells");
+			val->_float = ap_give_ammo_arr[0];
+			val = GetEdictFieldValueByName (sv_player, "ap_nails");
+			val->_float = ap_give_ammo_arr[1];
+			val = GetEdictFieldValueByName (sv_player, "ap_rockets");
+			val->_float = ap_give_ammo_arr[2];
+			val = GetEdictFieldValueByName (sv_player, "ap_cells");
+			val->_float = ap_give_ammo_arr[3];
 
-			if (sv_player->v.weapon == IT_SHOTGUN || sv_player->v.weapon == IT_SUPER_SHOTGUN) sv_player->v.currentammo = sv_player->v.ammo_shells;
-			if (sv_player->v.weapon == IT_NAILGUN || sv_player->v.weapon == IT_SUPER_NAILGUN) sv_player->v.currentammo = sv_player->v.ammo_nails;
-			if (sv_player->v.weapon == IT_ROCKET_LAUNCHER || sv_player->v.weapon == IT_GRENADE_LAUNCHER) sv_player->v.currentammo = sv_player->v.ammo_rockets;
-			if (sv_player->v.weapon == IT_LIGHTNING) sv_player->v.currentammo = sv_player->v.ammo_cells;
-
-			ap_give_ammo = 0;
 			for (int i = 0; i < AMMO_MAX; i++)
 			{
 				ap_give_ammo_arr[i] = 0;
 			}
-		}
 
-		//clamp max ammo
-		if ((int)sv_player->v.ammo_shells > ap_max_ammo_arr[0]) {
-			sv_player->v.ammo_shells = ap_max_ammo_arr[0];
-			if (sv_player->v.weapon == IT_SHOTGUN || sv_player->v.weapon == IT_SUPER_SHOTGUN) sv_player->v.currentammo = sv_player->v.ammo_shells;
-		}
-		if ((int)sv_player->v.ammo_nails > ap_max_ammo_arr[1]) {
-			sv_player->v.ammo_nails = ap_max_ammo_arr[1];
-			if (sv_player->v.weapon == IT_NAILGUN || sv_player->v.weapon == IT_SUPER_NAILGUN) sv_player->v.currentammo = sv_player->v.ammo_nails;
-		}
-		if ((int)sv_player->v.ammo_rockets > ap_max_ammo_arr[2]) {
-			sv_player->v.ammo_rockets = ap_max_ammo_arr[2];
-			if (sv_player->v.weapon == IT_ROCKET_LAUNCHER || sv_player->v.weapon == IT_GRENADE_LAUNCHER) sv_player->v.currentammo = sv_player->v.ammo_rockets;
-		}
-		if ((int)sv_player->v.ammo_cells > ap_max_ammo_arr[3]) {
-			sv_player->v.ammo_cells = ap_max_ammo_arr[3];
-			if (sv_player->v.weapon == IT_LIGHTNING) sv_player->v.currentammo = sv_player->v.ammo_cells;
-		}
+			Cbuf_AddText ("impulse 238\n");
 
-		// check inventory uses and refresh flags
-		eval_t* val;
+			ap_give_ammo = 0;
+		}
 
 		// set allow/deny for printing door/button messages
 		val = GetEdictFieldValueByName (sv_player, "ap_print_door_blocked");

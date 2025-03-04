@@ -3236,6 +3236,28 @@ static void Host_Spawn_f (void)
 		val = GetEdictFieldValueByName (host_client->edict, "armor_uses");
 		if (val && val->_float != ap_inv_arr[6]) val->_float = ap_inv_arr[6];
 
+		val = GetEdictFieldValueByName (sv_player, "ap_max_shells");
+		val->_float = ap_max_ammo_arr[0];
+
+		val = GetEdictFieldValueByName (sv_player, "ap_max_nails");
+		val->_float = ap_max_ammo_arr[1];
+
+		val = GetEdictFieldValueByName (sv_player, "ap_max_rockets");
+		val->_float = ap_max_ammo_arr[2];
+
+		val = GetEdictFieldValueByName (sv_player, "ap_max_cells");
+		val->_float = ap_max_ammo_arr[3];
+
+		val = GetEdictFieldValueByName (sv_player, "ap_shells");
+		val->_float = ap_max_ammo_arr[0];
+		val = GetEdictFieldValueByName (sv_player, "ap_nails");
+		val->_float = ap_max_ammo_arr[1];
+		val = GetEdictFieldValueByName (sv_player, "ap_rockets");
+		val->_float = ap_max_ammo_arr[2];
+		val = GetEdictFieldValueByName (sv_player, "ap_cells");
+		val->_float = ap_max_ammo_arr[3];
+		Cbuf_AddText ("impulse 238\n");
+
 		ap_fresh_map = 0;
 	}
 }

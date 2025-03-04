@@ -1436,10 +1436,12 @@ extern void ap_process_ingame_tic (void)
 
 	// Recharge 1 shell per second
 	if (ap_shell_recharge && elapsed_seconds_1 >= 1.0) {
-		ap_give_ammo = 1;
 		// make sure to not overwrite if there are active values present
 		if (ap_give_ammo_arr[0] == 0)
+		{
 			ap_give_ammo_arr[0] = 1;
+			ap_give_ammo = 1;
+		}
 		last_second_1 = current_time;
 	}
 	// Handle messages
