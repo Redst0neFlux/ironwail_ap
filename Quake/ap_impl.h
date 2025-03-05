@@ -93,6 +93,8 @@ extern int ap_inv_arr[];
 extern int ap_heal_amount;
 extern int ap_armor_amount;
 
+extern int ap_ingame;
+
 extern int ap_active_traps[];
 
 extern int ap_skill;
@@ -177,6 +179,7 @@ extern int ap_is_level_unlocked (char* mapname);
 // QuakeC Var Setters
 extern int ap_get_quakec_apflag ();
 extern void ap_set_inventory_to_max ();
+extern void ap_set_ammo_to_max ();
 
 // Extern AP Lib Funcs
 extern void ap_init_connection ();

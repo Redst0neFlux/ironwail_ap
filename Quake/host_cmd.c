@@ -3211,6 +3211,7 @@ static void Host_Spawn_f (void)
 		ap_sync_inventory ();
 		int	v = ap_get_quakec_apflag (); // [ap] return quakec flag to be set
 		ap_set_inventory_to_max ();
+		ap_set_ammo_to_max ();
 
 		val = GetEdictFieldValueByName (host_client->edict, "ap_items");
 		if (val && val->_float != v) val->_float = v;
@@ -3257,8 +3258,6 @@ static void Host_Spawn_f (void)
 		val = GetEdictFieldValueByName (sv_player, "ap_cells");
 		val->_float = ap_max_ammo_arr[3];
 		Cbuf_AddText ("impulse 238\n");
-
-		ap_fresh_map = 0;
 	}
 }
 

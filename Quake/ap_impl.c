@@ -42,6 +42,7 @@ int ap_inv_arr[INV_MAX]; // 0 quad, 1 invuln, 2 bio, 3 invis, 4 backpack, 5 medk
 
 int ap_heal_amount = 0;
 int ap_armor_amount = 0;
+int ap_ingame = 0;
 
 int ap_active_traps[TRAPS_MAX]; // 0 lowhealth, 1 death, 2 mouse, 3 sound, 4 jump
 
@@ -871,7 +872,7 @@ uint16_t AP_ProgressiveItem (ap_net_id_t id)
 		count = malloc (sizeof (uint16_t));
 		if (count) *count = 1;
 		uint64_t* key = malloc (sizeof (uint64_t));
-		if (key != NULL) *key = id;
+		if (key) *key = id;
 		g_hash_table_insert (ap_game_state->progressive, key, count);
 	}
 	if (count) return *count;
@@ -1053,6 +1054,7 @@ static bool item_for_current_level (json_t* info)
 }
 
 void ap_set_default_inv () {
+	ap_printf ("Call to SET_DEFAULT_INV\n");
 	// Clear inventory info
 	for (uint8_t i = 0; i < INV_MAX; i++)
 	{
@@ -1076,8 +1078,6 @@ void ap_set_default_inv () {
 	ap_give_ammo = 0;
 	ap_give_inv = 0;
 	ap_inventory_flags = 0;
-
-	//TODO: Do ability unlocks need to be cleared?
 }
 
 GHashTable* ap_debug_edict_lut = NULL;
@@ -1121,6 +1121,7 @@ static void ap_get_item (ap_net_id_t item_id, bool silent, bool is_new)
 {
 	json_t* item_info = g_hash_table_lookup (ap_item_info, &item_id);
 	if (!item_info) return;
+	json_print_sys ("item_info", item_info);
 	// Check if we have a dynamic override for the item in our seed slot data
 	GString* gs_key = g_string_new ("dynamic");
 	json_t* dynamic_info = g_hash_table_lookup (ap_game_settings, gs_key);
@@ -1153,6 +1154,10 @@ static void ap_get_item (ap_net_id_t item_id, bool silent, bool is_new)
 
 	if (!strcmp (item_type, "progressive")) {
 		// Add to our progressive counter and check how many we have now
+		//json_print_sys ("item_info",item_info);
+		//ap_printf ("item_id %i\n", item_id);
+		if (item_id == 1895891191)
+			ap_printf ("Checking Prog Thunderbolt\n");
 		uint16_t prog_count = AP_ProgressiveItem (item_id);
 		// And apply whatever item we have next in the queue
 		json_t* items_array = json_object_get (item_info, "items");
@@ -1166,6 +1171,7 @@ static void ap_get_item (ap_net_id_t item_id, bool silent, bool is_new)
 	else if (!strcmp (item_type, "key") && item_for_current_level (item_info)) {
 		// apply key flag to inventory flags
 		uint64_t flags = json_integer_value (json_object_get (item_info, "flags"));
+		ap_printf("set key flag\n");
 		ap_inventory_flags |= flags;
 	}
 	else if (!strcmp (item_type, "key")) {
@@ -1181,6 +1187,7 @@ static void ap_get_item (ap_net_id_t item_id, bool silent, bool is_new)
 			*new_val = 0 | flags;
 			g_hash_table_insert (ap_keys_per_level, gs_key, new_val);
 		}
+		ap_printf ("save key state\n");
 	}
 	else if (!strcmp (item_type, "map")) {
 		GString* gs_key = g_string_new (json_string_value (json_object_get (item_info, "mapfile")));
@@ -1195,7 +1202,7 @@ static void ap_get_item (ap_net_id_t item_id, bool silent, bool is_new)
 	else if (!strcmp (item_type, "weapon")) {
 		uint64_t flags = json_integer_value (json_object_get (item_info, "flags"));
 		ap_inventory_flags |= flags;
-
+		ap_printf ("set weapon flag\n");
 		// grab ammonum and fill give_arr
 		int ammonum = (int)json_integer_value (json_object_get (item_info, "ammonum"));
 		int ammo = (int)json_integer_value (json_object_get (item_info, "ammo"));
@@ -1211,6 +1218,7 @@ static void ap_get_item (ap_net_id_t item_id, bool silent, bool is_new)
 		if (capacity_obj) {
 			int capacity = (int)json_integer_value (capacity_obj);
 			ap_max_ammo_arr[ammonum] += capacity;
+			ap_printf ("ap_max_ammo_arr[%i] = %i\n", ammonum,ap_max_ammo_arr[ammonum]);
 		}
 		ap_give_ammo = 1;
 	}
@@ -1282,6 +1290,7 @@ static void ap_get_item (ap_net_id_t item_id, bool silent, bool is_new)
 }
 
 void ap_sync_inventory () {
+	ap_printf ("CALL TO AP_SYNC_INVENTORY\n");
 	g_hash_table_remove_all(ap_game_state->progressive);
 
 	ap_set_default_inv ();
@@ -1472,9 +1481,13 @@ extern void ap_process_global_tic (void)
 		json_t* item_info = g_hash_table_lookup (ap_item_info, &queue_item->item_id);
 		if (!item_info) return;
 
+		// throw away temp boosts when not ingame
 		const char* item_type = json_string_value (json_object_get (item_info, "type"));
-		if (!strcmp(item_type, "map") || !strcmp (item_type, "trap") || !strcmp (item_type, "key") || !strcmp (item_type, "goal")){
-			ap_get_item (queue_item->item_id, !queue_item->notify, true);
+		if (!ap_ingame && (!strcmp (item_type, "health") || !strcmp (item_type, "armor"))) {
+			// pass
+		}
+		else if (!strcmp(item_type, "map") || !strcmp (item_type, "trap") || !strcmp (item_type, "key") || !strcmp (item_type, "goal")){
+				ap_get_item (queue_item->item_id, !queue_item->notify, true);
 		}
 		else {
 			g_queue_push_tail (temp_queue, queue_item);
@@ -1502,6 +1515,14 @@ extern void ap_set_inventory_to_max (void) {
 	{
 		ap_inv_arr[i] = ap_inv_max_arr[i];
 	}
+}
+
+extern void ap_set_ammo_to_max (void) {
+	for (int i = 0; i < INV_MAX; i++)
+	{
+		ap_give_ammo_arr[i] = ap_max_ammo_arr[i];
+	}
+	ap_give_ammo = 1;
 }
 
 

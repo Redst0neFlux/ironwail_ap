@@ -961,9 +961,24 @@ void SV_Physics_Client (edict_t	*ent, int num)
 	if ( ! svs.clients[num-1].active )
 		return;		// unconnected slot
 
-	// [ap] TODO: Maybe every ~10th tic instead?
-	ap_process_ingame_tic ();
 	if (sv_player && cls.signon == SIGNONS) {
+
+		eval_t* val;
+
+		ap_ingame = 1;
+
+		if (ap_fresh_map) {
+			ap_fresh_map = 0;
+			ap_heal_amount = 0;
+			ap_armor_amount = 0;
+			val = GetEdictFieldValueByName (sv_player, "ap_armor_amount");
+			val->_float = 25;
+			val = GetEdictFieldValueByName (sv_player, "ap_heal_amount");
+			val->_float = 25;
+		}
+
+		// [ap] TODO: Maybe every ~10th tic instead?
+		ap_process_ingame_tic ();
 		// send latest messages
 		while (ap_message_pending ()) {
 			char** message_parts = ap_get_latest_message ();
@@ -986,7 +1001,6 @@ void SV_Physics_Client (edict_t	*ent, int num)
 		sv_player->v.items = (int)sv_player->v.items | ap_inventory_flags;
 		
 		// check inventory uses and refresh flags
-		eval_t* val;
 
 		//set max ammo
 		val = GetEdictFieldValueByName (sv_player, "ap_max_shells");
@@ -1017,7 +1031,7 @@ void SV_Physics_Client (edict_t	*ent, int num)
 				ap_give_ammo_arr[i] = 0;
 			}
 
-			Cbuf_AddText ("impulse 238\n");
+			//Cbuf_AddText ("impulse 238\n");
 
 			ap_give_ammo = 0;
 		}
@@ -1025,6 +1039,8 @@ void SV_Physics_Client (edict_t	*ent, int num)
 		if (ap_heal_amount > 0) {
 			val = GetEdictFieldValueByName (sv_player, "ap_heal_amount");
 			val->_float = ap_heal_amount;
+			val = GetEdictFieldValueByName (sv_player, "medkit_uses");
+			val->_float += 1;
 			Cbuf_AddText ("impulse 235\n");
 			ap_heal_amount = 0;
 		}
@@ -1032,6 +1048,8 @@ void SV_Physics_Client (edict_t	*ent, int num)
 		if (ap_armor_amount > 0) {
 			val = GetEdictFieldValueByName (sv_player, "ap_armor_amount");
 			val->_float = ap_armor_amount;
+			val = GetEdictFieldValueByName (sv_player, "armor_uses");
+			val->_float += 1;
 			Cbuf_AddText ("impulse 236\n");
 			ap_armor_amount = 0;
 		}
