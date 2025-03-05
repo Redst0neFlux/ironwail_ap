@@ -1022,6 +1022,20 @@ void SV_Physics_Client (edict_t	*ent, int num)
 			ap_give_ammo = 0;
 		}
 
+		if (ap_heal_amount > 0) {
+			val = GetEdictFieldValueByName (sv_player, "ap_heal_amount");
+			val->_float = ap_heal_amount;
+			Cbuf_AddText ("impulse 235\n");
+			ap_heal_amount = 0;
+		}
+
+		if (ap_armor_amount > 0) {
+			val = GetEdictFieldValueByName (sv_player, "ap_armor_amount");
+			val->_float = ap_armor_amount;
+			Cbuf_AddText ("impulse 236\n");
+			ap_armor_amount = 0;
+		}
+
 		// set allow/deny for printing door/button messages
 		val = GetEdictFieldValueByName (sv_player, "ap_print_door_blocked");
 		val->_float = ap_printdoorblocked.value;

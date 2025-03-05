@@ -40,6 +40,9 @@ int ap_give_inv = 0;
 int ap_inv_max_arr[INV_MAX]; // 0 quad, 1 invuln, 2 bio, 3 invis, 4 backpack, 5 medkit, 6 armor
 int ap_inv_arr[INV_MAX]; // 0 quad, 1 invuln, 2 bio, 3 invis, 4 backpack, 5 medkit, 6 armor
 
+int ap_heal_amount = 0;
+int ap_armor_amount = 0;
+
 int ap_active_traps[TRAPS_MAX]; // 0 lowhealth, 1 death, 2 mouse, 3 sound, 4 jump
 
 int ap_skill = 0;
@@ -1210,6 +1213,14 @@ static void ap_get_item (ap_net_id_t item_id, bool silent, bool is_new)
 			ap_max_ammo_arr[ammonum] += capacity;
 		}
 		ap_give_ammo = 1;
+	}
+	else if (!strcmp (item_type, "health")) {
+		int heal = (int)json_integer_value (json_object_get (item_info, "heal"));
+		ap_heal_amount = heal;
+	}
+	else if (!strcmp (item_type, "armor")) {
+		int armor = (int)json_integer_value (json_object_get (item_info, "armor"));
+		ap_armor_amount = armor;
 	}
 	else if (!strcmp (item_type, "inventory")) {
 		int invnum = (int)json_integer_value (json_object_get (item_info, "invnum"));

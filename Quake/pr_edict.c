@@ -1492,7 +1492,6 @@ void ED_LoadFromFile (const char *data)
 		}
 
 		classname = PR_GetString (ent->v.classname);
-
 		if (sv.mapchecks.active)
 		{
 			int skillflags = (int)ent->v.spawnflags & (SPAWNFLAG_NOT_EASY|SPAWNFLAG_NOT_MEDIUM|SPAWNFLAG_NOT_HARD);

@@ -90,6 +90,9 @@ extern int ap_give_inv;
 extern int ap_inv_max_arr[];
 extern int ap_inv_arr[];
 
+extern int ap_heal_amount;
+extern int ap_armor_amount;
+
 extern int ap_active_traps[];
 
 extern int ap_skill;
