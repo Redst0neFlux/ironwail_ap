@@ -1039,7 +1039,6 @@ static void GetGameSummary (summary_t *s)
 		// [ap] Killed a monster, check if we have max kills
 		if (!all_kills_lastmap) all_kills_lastmap = (char*)malloc (129);
 		if (all_kills_lastmap != NULL && strcmp(all_kills_lastmap, cl.mapname) && ( (cl.stats[STAT_MONSTERS] == cl.stats[STAT_TOTALMONSTERS])) || ap_giveallkills == 1.0) {
-			Con_SafePrintf ("\nALL KILLS\n");
 			q_strlcpy (all_kills_lastmap, cl.mapname, countof (s->map));
 			const char* suffix = "all_kills";
 			char* combined_string = (char*)malloc ((10 + strlen (sv.name) + 1) * sizeof (char));
