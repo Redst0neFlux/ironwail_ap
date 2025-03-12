@@ -12,6 +12,8 @@
 #define AP_DEBUG 0
 // Enable to spawn in without server connection to grab level data
 #define AP_DEBUG_SPAWN 0
+// Dump entity data to textfile on level load
+#define AP_DUMP_EDICT 0
 
 /*
 #ifdef _DEBUG
@@ -94,6 +96,7 @@ extern int ap_heal_amount;
 extern int ap_armor_amount;
 
 extern int ap_ingame;
+extern int ap_prog_sounds;
 
 extern int ap_active_traps[];
 

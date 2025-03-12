@@ -43,6 +43,7 @@ int ap_inv_arr[INV_MAX]; // 0 quad, 1 invuln, 2 bio, 3 invis, 4 backpack, 5 medk
 int ap_heal_amount = 0;
 int ap_armor_amount = 0;
 int ap_ingame = 0;
+int ap_prog_sounds = 0;
 
 int ap_active_traps[TRAPS_MAX]; // 0 lowhealth, 1 death, 2 mouse, 3 sound, 4 jump
 
@@ -561,51 +562,6 @@ void ap_free_message_parts_array (char** parts) {
 	free (parts);
 }
 
-const char* ap_check_for_item_string (const char* input_string) {
-	if (!input_string) return NULL;
-
-	const char* target_strings[] = {
-		"item_armor1",
-		"item_armor2",
-		"item_armorInv",
-		"weapon_lightning",
-		"weapon_nailgun",
-		"weapon_supernailgun",
-		"weapon_supershotgun",
-		"weapon_grenadelauncher",
-		"weapon_rocketlauncher",
-		"item_health (Small Medkit)",
-		"item_cells",
-		"item_rockets",
-		"item_shells",
-		"item_spikes",
-		"item_artifact_envirosuit",
-		"item_artifact_invisibility",
-		"item_artifact_invulnerability",
-		"item_artifact_super_damage",
-		"item_key1",
-		"item_key2",
-		"item_sigil",
-		"item_weapon",
-		"item_artifact_empathy_shields",
-		"item_hornofconjuring",
-		"item_artifact_wetsuit",
-		"weapon_laser_gun",
-		"weapon_mjolnir",
-		"weapon_proximity_gun"
-	};
-
-	size_t num_targets = sizeof (target_strings) / sizeof (target_strings[0]);
-
-	for (size_t i = 0; i < num_targets; i++) {
-		if (strstr (input_string, target_strings[i]) != NULL) {
-			return target_strings[i]; // Return pointer to the matched string
-		}
-	}
-
-	return NULL; // No match found
-}
-
 char* extract_bracketed_part (const char* str) {
 	char* start = strchr (str, '(');
 	if (start == NULL) {
@@ -1054,7 +1010,6 @@ static bool item_for_current_level (json_t* info)
 }
 
 void ap_set_default_inv () {
-	ap_printf ("Call to SET_DEFAULT_INV\n");
 	// Clear inventory info
 	for (uint8_t i = 0; i < INV_MAX; i++)
 	{
@@ -1136,6 +1091,7 @@ static void ap_get_item (ap_net_id_t item_id, bool silent, bool is_new)
 	// Store counts for stateful items
 	if (is_new && json_boolean_value (json_object_get (item_info, "persistent")))
 	{
+		ap_prog_sounds += 1;
 		uint16_t* count = malloc (sizeof (uint16_t));
 		*count = 0;
 		ap_net_id_t* key = malloc (sizeof (ap_net_id_t));
@@ -1156,8 +1112,6 @@ static void ap_get_item (ap_net_id_t item_id, bool silent, bool is_new)
 		// Add to our progressive counter and check how many we have now
 		//json_print_sys ("item_info",item_info);
 		//ap_printf ("item_id %i\n", item_id);
-		if (item_id == 1895891191)
-			ap_printf ("Checking Prog Thunderbolt\n");
 		uint16_t prog_count = AP_ProgressiveItem (item_id);
 		// And apply whatever item we have next in the queue
 		json_t* items_array = json_object_get (item_info, "items");
@@ -1171,7 +1125,6 @@ static void ap_get_item (ap_net_id_t item_id, bool silent, bool is_new)
 	else if (!strcmp (item_type, "key") && item_for_current_level (item_info)) {
 		// apply key flag to inventory flags
 		uint64_t flags = json_integer_value (json_object_get (item_info, "flags"));
-		ap_printf("set key flag\n");
 		ap_inventory_flags |= flags;
 	}
 	else if (!strcmp (item_type, "key")) {
@@ -1187,7 +1140,6 @@ static void ap_get_item (ap_net_id_t item_id, bool silent, bool is_new)
 			*new_val = 0 | flags;
 			g_hash_table_insert (ap_keys_per_level, gs_key, new_val);
 		}
-		ap_printf ("save key state\n");
 	}
 	else if (!strcmp (item_type, "map")) {
 		GString* gs_key = g_string_new (json_string_value (json_object_get (item_info, "mapfile")));
@@ -1202,7 +1154,6 @@ static void ap_get_item (ap_net_id_t item_id, bool silent, bool is_new)
 	else if (!strcmp (item_type, "weapon")) {
 		uint64_t flags = json_integer_value (json_object_get (item_info, "flags"));
 		ap_inventory_flags |= flags;
-		ap_printf ("set weapon flag\n");
 		// grab ammonum and fill give_arr
 		int ammonum = (int)json_integer_value (json_object_get (item_info, "ammonum"));
 		int ammo = (int)json_integer_value (json_object_get (item_info, "ammo"));
@@ -1218,7 +1169,6 @@ static void ap_get_item (ap_net_id_t item_id, bool silent, bool is_new)
 		if (capacity_obj) {
 			int capacity = (int)json_integer_value (capacity_obj);
 			ap_max_ammo_arr[ammonum] += capacity;
-			ap_printf ("ap_max_ammo_arr[%i] = %i\n", ammonum,ap_max_ammo_arr[ammonum]);
 		}
 		ap_give_ammo = 1;
 	}
@@ -1290,7 +1240,6 @@ static void ap_get_item (ap_net_id_t item_id, bool silent, bool is_new)
 }
 
 void ap_sync_inventory () {
-	ap_printf ("CALL TO AP_SYNC_INVENTORY\n");
 	g_hash_table_remove_all(ap_game_state->progressive);
 
 	ap_set_default_inv ();

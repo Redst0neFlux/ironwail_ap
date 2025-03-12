@@ -1685,11 +1685,38 @@ void ED_LoadFromFile (const char *data)
 	ap_printfd ("Load from file finished.\n\n");
 	Con_DPrintf ("%i entities inhibited\n", inhibit);
 
+	// [ap] create special location for getting all kills
+	ap_item_count += 1;
+	const char* suffix = "all_kills";
+	char* combined_string = (char*)malloc ((10 + strlen (sv.name) + 1) * sizeof (char));
+	if (combined_string) {
+		strcpy (combined_string, sv.name);
+		strcat (combined_string, suffix);
+	}
+	Con_SafePrintf ("{\"id\": %i, ", ap_item_count);
+	Con_SafePrintf ("\"name\": \"%s (%i)\", ", "All Kills", ap_item_count);
+	Con_SafePrintf ("\"classname\": \"%s\", ", "all_kills");
+	Con_SafePrintf ("\"uuid\": %zu, ", generate_hash (999, 999, 999, combined_string));
+	Con_SafePrintf ("\"mp\": 0},\n");
+	free (combined_string);
+
 	// [ap] remove entities that don't belong to the current skill
 	for (int i = 0; i < remove_array_index; i++) {
 		edict_t* remove_ent = (edict_t*)remove_after[i];
 		ap_printfd ("Removing after: %s (%i) %f\n", PR_GetString (remove_ent->v.classname),NUM_FOR_EDICT (remove_ent), remove_ent->v.spawnflags);
 		ED_Free (remove_ent);
+	}
+	if (AP_DUMP_EDICT) {
+		const char* prefix = "condump ";
+		combined_string = (char*)malloc ((9 + strlen (sv.name) + 1 + 2) * sizeof (char));
+		if (combined_string) {
+			strcpy (combined_string, prefix);
+			strcat (combined_string, sv.name);
+			strcat (combined_string, "\n");
+		}
+		Cbuf_AddText (combined_string);
+		free (combined_string);
+		Cbuf_AddText ("clear\n");
 	}
 }
 

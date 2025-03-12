@@ -1016,12 +1016,15 @@ static int CountActiveClients (void)
 GetGameSummary
 ==================
 */
+char* all_kills_lastmap;
+extern float ap_giveallkills;
 static void GetGameSummary (summary_t *s)
 {
 	if (!cl_titlestats.value || cls.state != ca_connected || cls.signon != SIGNONS)
 	{
 		s->map[0] = 0;
 		memset (&s->stats, 0, sizeof (s->stats));
+		if (!all_kills_lastmap) all_kills_lastmap = (char*)malloc (129);
 	}
 	else
 	{
@@ -1033,6 +1036,21 @@ static void GetGameSummary (summary_t *s)
 		s->stats.total_monsters = cl.stats[STAT_TOTALMONSTERS];
 		s->stats.secrets        = cl.stats[STAT_SECRETS];
 		s->stats.total_secrets  = cl.stats[STAT_TOTALSECRETS];
+		// [ap] Killed a monster, check if we have max kills
+		if (!all_kills_lastmap) all_kills_lastmap = (char*)malloc (129);
+		if (all_kills_lastmap != NULL && strcmp(all_kills_lastmap, cl.mapname) && ( (cl.stats[STAT_MONSTERS] == cl.stats[STAT_TOTALMONSTERS])) || ap_giveallkills == 1.0) {
+			Con_SafePrintf ("\nALL KILLS\n");
+			q_strlcpy (all_kills_lastmap, cl.mapname, countof (s->map));
+			const char* suffix = "all_kills";
+			char* combined_string = (char*)malloc ((10 + strlen (sv.name) + 1) * sizeof (char));
+			if (combined_string) {
+				strcpy (combined_string, sv.name);
+				strcat (combined_string, suffix);
+			}
+			uint64_t loc_hash = generate_hash (999, 999, 999, combined_string);
+			if (!AP_DEBUG_SPAWN) AP_CheckLocation (loc_hash, "items");
+			ap_giveallkills = 0.0;
+		}
 	}
 }
 

@@ -179,6 +179,8 @@ void IN_JumpUp (void) {KeyUp(&in_jump);}
 
 void IN_Impulse (void) {in_impulse=Q_atoi(Cmd_Argv(1));}
 
+// [ap]
+extern cvar_t ap_showmonsters;
 // [ap] automap toggle and other cmds
 void IN_Automap (void) {
 	if (!ap_can_automap(sv.name)) {
@@ -198,7 +200,10 @@ void IN_Automap (void) {
 		//adjust filter
 		//if (AP_DEBUG) Cbuf_AddText ("r_showbboxes_filter item_ weapon_ trigger_secret trigger_changelevel\n");
 		//else Cbuf_AddText ("r_showbboxes_filter item_ weapon_\n");
-		Cbuf_AddText ("r_showbboxes_filter item_ weapon_ trigger_secret trigger_changelevel\n");
+		if (ap_showmonsters.value > 0) 
+			Cbuf_AddText ("r_showbboxes_filter item_ weapon_ trigger_secret trigger_changelevel monster_\n");
+		else
+			Cbuf_AddText ("r_showbboxes_filter item_ weapon_ trigger_secret trigger_changelevel\n");
 		//enable bboxes
 		Cvar_SetQuick (showbb, "1");
 		Con_SafePrintf ("Automap on\n");
@@ -207,6 +212,12 @@ void IN_Automap (void) {
 
 void IN_ClearEdictList (void) {
 	clear_touched_edict_list ();
+}
+
+float ap_giveallkills;
+void IN_GiveAllKills (void) {
+	if (ap_giveallkills != 0) ap_giveallkills = 0.0;
+	else ap_giveallkills = 1.0;
 }
 
 void IN_DebugDive (void) {
@@ -591,6 +602,7 @@ void CL_InitInput (void)
 	Cmd_AddCommand ("-mlook", IN_MLookUp);
 	// [ap] add new keybinds
 	Cmd_AddCommand ("automap", IN_Automap);
+	Cmd_AddCommand ("ap_giveallkills", IN_GiveAllKills);
 	if (AP_DEBUG) Cmd_AddCommand ("clear_edictlist", IN_ClearEdictList);
 	if (AP_DEBUG_SPAWN) {
 		Cmd_AddCommand ("ap_debug_dive", IN_DebugDive);

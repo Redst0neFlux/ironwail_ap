@@ -946,6 +946,10 @@ void SV_WalkMove (edict_t *ent)
 // [ap] button/door message cvars
 extern cvar_t ap_printdoorblocked;
 extern cvar_t ap_printbuttonblocked;
+// sound cue
+extern cvar_t ap_playsound;
+
+float next_sound_time;
 
 /*
 ================
@@ -967,18 +971,21 @@ void SV_Physics_Client (edict_t	*ent, int num)
 
 		ap_ingame = 1;
 
+		// [ap] TODO: Maybe every ~10th tic instead?
+		ap_process_ingame_tic ();
+
 		if (ap_fresh_map) {
 			ap_fresh_map = 0;
+			ap_prog_sounds = 0;
 			ap_heal_amount = 0;
 			ap_armor_amount = 0;
+			next_sound_time = 0;
 			val = GetEdictFieldValueByName (sv_player, "ap_armor_amount");
 			val->_float = 25;
 			val = GetEdictFieldValueByName (sv_player, "ap_heal_amount");
 			val->_float = 25;
 		}
 
-		// [ap] TODO: Maybe every ~10th tic instead?
-		ap_process_ingame_tic ();
 		// send latest messages
 		while (ap_message_pending ()) {
 			char** message_parts = ap_get_latest_message ();
@@ -1162,14 +1169,32 @@ void SV_Physics_Client (edict_t	*ent, int num)
 			ap_fresh_map = 1;
 		}
 		// check if we have killed shub and send the changelevel item
+		// also send all_kills because killcount is bugged
 		if (CL_InCutscene () && !strcmp (sv.name, "end"))
+		{
 			AP_CheckLocation (1717686674820885145, "exits");
+			const char* suffix = "all_kills";
+			char* combined_string = (char*)malloc ((10 + strlen (sv.name) + 1) * sizeof (char));
+			if (combined_string) {
+				strcpy (combined_string, sv.name);
+				strcat (combined_string, suffix);
+			}
+			uint64_t loc_hash = generate_hash (999, 999, 999, combined_string);
+			if (!AP_DEBUG_SPAWN) AP_CheckLocation (loc_hash, "items");
+		}
 		else if (CL_InCutscene () && hipnotic && !strcmp (sv.name, "hipend"))
 			AP_CheckLocation (13397806965560897405, "exits");
-	}
-	
-	
 
+		// play progressive sound cue if cvar is set
+		if ((ap_prog_sounds > 0) && ap_playsound.value && (qcvm->time > next_sound_time)) {
+			SV_StartSound (sv_player, 0, "misc/talk.wav", 255, 1);
+			ap_prog_sounds -= 1;
+			next_sound_time = qcvm->time + 2;
+		}
+	}
+
+
+	
 //
 // call standard client pre-think
 //

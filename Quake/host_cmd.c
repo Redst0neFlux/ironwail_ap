@@ -2572,7 +2572,7 @@ static void Host_Loadgame_f (void)
 	// [ap] load and check if seed matches
 	data = COM_ParseStringNewline (data);
 	const char* savedata_name = ap_get_savedata_name ();
-	if (strcmp (com_token, savedata_name)){
+	if (strcmp (com_token, savedata_name) && !AP_DEBUG_SPAWN){
 		free (start);
 		start = NULL;
 		if (sv.autoloading)
