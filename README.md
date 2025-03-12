@@ -18,21 +18,21 @@ Currently only Windows x64 is supported.
 If set to 0, the HUD element only shows up when the scoreboard is open (tab by default).
 |CVAR|Description|
 |---|---|
-|ap_shorthud|shortens the names of HUD elements to take up less space|
-|ap_alwaysshowunlocks|always shows the unlocked abilities in the top-right corner|
-|ap_alwaysshowchecks|always shows the available/collected checks of the current map in the bottom-right corner|
-|ap_alwaysshowinventory|always shows the inventory items in the bottom middle|
+|ap_shorthud|Shortens the names of HUD elements to take up less space|
+|ap_alwaysshowunlocks|Always shows the unlocked abilities in the top-right corner|
+|ap_alwaysshowchecks|Always shows the available/collected checks of the current map in the bottom-right corner|
+|ap_alwaysshowinventory|Always shows the inventory items in the bottom middle|
 
 These cvars are for the automap:
 |CVAR|Description|
 |---|---|
-|ap_highlighthinted|hightlight hinted items in green on the automap|
-|ap_showmonsters|show monsters (red) in the automap|
+|ap_highlighthinted|Hightlight hinted items in green on the automap|
+|ap_showmonsters|Show monsters (red) in the automap|
 
 Audio cvars:
 |CVAR|Description|
 |---|---|
-|ap_playsound|play the talk/chat sound when a persistent item is picked up|
+|ap_playsound|Play the talk/chat sound when a persistent item is picked up|
 
 If scr_showspeed is enabled:
 |CVAR|Description|
@@ -46,6 +46,11 @@ The messages have a 2 second cooldown so the player doesn't get spammed.
 |---|---|
 |ap_printdoorblocked|Show a console message if a door was blocked|
 |ap_printbuttonblocked|Show a console message if a button was blocked|
+
+Debug cvars:
+|CVAR|Description|
+|---|---|
+|ap_giveallkills|Awards the All-Kills check for the current map|
 
 # Original Ironwail Readme:
 
