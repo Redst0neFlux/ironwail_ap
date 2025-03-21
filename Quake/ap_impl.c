@@ -30,11 +30,13 @@ int ap_debug_grenadejump = 0;
 int ap_debug_shootswitch = 0;
 
 // quake sync vars
+int ap_ammo_max = 4;
 int ap_inventory_flags = 0;
+int ap_inventory2_flags = 0;
 int ap_give_ammo = 0;
-int ap_give_ammo_arr[AMMO_MAX]; // 0 shells, 1 spikes, 2 rockets, 3 batteries
-int ap_max_ammo_arr[AMMO_MAX]; // 0 shells, 1 spikes, 2 rockets, 3 batteries
-int ap_max_ammo_default_arr[AMMO_MAX] = { 25, 30, 5, 15 }; // 0 shells, 1 spikes, 2 rockets, 3 batteries
+int ap_give_ammo_arr[AMMO_MAX]; // 0 shells, 1 spikes, 2 rockets, 3 batteries, 4 lava nails, 5 plasma ammo, 6 multi rockets
+int ap_max_ammo_arr[AMMO_MAX]; // 0 shells, 1 spikes, 2 rockets, 3 batteries, 4 lava nails, 5 plasma ammo, 6 multi rockets
+int ap_max_ammo_default_arr[AMMO_MAX] = { 25, 30, 5, 25, 30, 15, 5}; // 0 shells, 1 spikes, 2 rockets, 3 batteries, 4 lava nails, 5 plasma ammo, 6 multi rockets
 
 int ap_give_inv = 0;
 int ap_inv_max_arr[INV_MAX]; // 0 quad, 1 invuln, 2 bio, 3 invis, 4 backpack, 5 medkit, 6 armor
@@ -53,8 +55,6 @@ int ap_shell_recharge = 0;
 int ap_powerup_recharge = 0;
 
 int ap_traps_as_progressive = 0;
-
-int ap_shub_defeated = 0;
 
 int ap_fresh_map = 0;
 
@@ -760,6 +760,7 @@ void AP_ExtLocationCheck (uint64_t location_id)
 
 int AP_CheckLocation (uint64_t loc_hash, char* loc_type)
 {
+	if (AP_DEBUG_SPAWN) return 1;
 	ap_location_t loc = edict_to_ap_locid (loc_hash, loc_type);
 	// Check if the location is even a valid id for current game
 	if (!AP_VALID_LOCATION (loc))
@@ -774,6 +775,25 @@ int AP_CheckLocation (uint64_t loc_hash, char* loc_type)
 	// And note the location check in the console
 	ap_printfd ("New Check: %s\n", AP_GetLocationName (net_loc));
 	return 1;
+}
+
+void AP_SendExit (char* mapname)
+{
+	if (AP_DEBUG_SPAWN) return;
+	json_t* level_data = level_data = json_object_get (json_object_get (json_object_get (ap_game_config, "locations"), mapname), "exits");
+	const char* k_itemkey;
+	json_t* v_itemdata;
+	json_object_foreach (level_data, k_itemkey, v_itemdata)
+	{
+		ap_location_t exit_loc = (ap_location_t)json_integer_value (json_object_get (v_itemdata, "id"));
+		if (exit_loc > 0 && AP_LOCATION_CHECK_MASK (exit_loc, (AP_LOC_EXIT | AP_LOC_USED)))
+		{
+			ap_net_id_t net_loc = AP_NET_ID (exit_loc);
+			AP_SendItem (AP_NET_ID (net_loc));
+			ap_locations[exit_loc].state |= AP_LOC_CHECKED;
+			ap_printfd ("New Check: %s\n", AP_GetLocationName (net_loc));
+		}
+	}
 }
 
 int AP_IsLocChecked (uint64_t loc_hash, char* loc_type) 
@@ -1021,7 +1041,7 @@ void ap_set_default_inv () {
 		}
 	}
 	// Clear weapon info
-	for (uint8_t i = 0; i < AMMO_MAX; i++)
+	for (uint8_t i = 0; i < ap_ammo_max; i++)
 	{
 		ap_give_ammo_arr[i] = 0;
 		ap_max_ammo_arr[i] = ap_max_ammo_default_arr[i];
@@ -1033,6 +1053,7 @@ void ap_set_default_inv () {
 	ap_give_ammo = 0;
 	ap_give_inv = 0;
 	ap_inventory_flags = 0;
+	ap_inventory2_flags = 0;
 }
 
 GHashTable* ap_debug_edict_lut = NULL;
@@ -1157,8 +1178,18 @@ static void ap_get_item (ap_net_id_t item_id, bool silent, bool is_new)
 		// grab ammonum and fill give_arr
 		int ammonum = (int)json_integer_value (json_object_get (item_info, "ammonum"));
 		int ammo = (int)json_integer_value (json_object_get (item_info, "ammo"));
+		if (rogue) {
+			json_t* it2_obj = json_object_get (item_info, "it2_flags");
+			if (it2_obj) {
+				uint64_t it2flags = json_integer_value (it2_obj);
+				ap_inventory2_flags |= it2flags;
+			}
+		}
+		// weapon pickup should also increase capacity
+		ap_max_ammo_arr[ammonum] += ammo;
 		ap_give_ammo_arr[ammonum] += ammo;
 		ap_give_ammo = 1;
+		
 	}
 	else if (!strcmp (item_type, "ammo") || !strcmp (item_type, "maxammo")) {
 		int ammonum = (int)json_integer_value (json_object_get (item_info, "ammonum"));
@@ -1888,6 +1919,10 @@ void AP_Initialize (json_t* game_config, ap_connection_settings_t connection)
 	ap_message_queue = g_queue_new ();
 	scout_reqs = g_array_new (FALSE, FALSE, sizeof (gpointer));
 	ap_inventory_flags = 0;
+	ap_inventory2_flags = 0;
+
+	if (rogue) 
+		ap_ammo_max = 7;
 
 	init_location_table (json_object_get (game_config, "locations"));
 	init_item_table (json_object_get (game_config, "items"));

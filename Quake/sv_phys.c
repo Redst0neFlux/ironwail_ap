@@ -984,6 +984,19 @@ void SV_Physics_Client (edict_t	*ent, int num)
 			val->_float = 25;
 			val = GetEdictFieldValueByName (sv_player, "ap_heal_amount");
 			val->_float = 25;
+			if (AP_DUMP_EDICT) {
+				char* combined_string = (char*)malloc ((10 + strlen (sv.name) + 1) * sizeof (char));
+				const char* prefix = "condump ";
+				combined_string = (char*)malloc ((9 + strlen (sv.name) + 1 + 2) * sizeof (char));
+				if (combined_string) {
+					strcpy (combined_string, prefix);
+					strcat (combined_string, sv.name);
+					strcat (combined_string, "\n");
+				}
+				Cbuf_AddText (combined_string);
+				free (combined_string);
+				Cbuf_AddText ("clear\n");
+			}
 		}
 
 		// send latest messages
@@ -1006,7 +1019,11 @@ void SV_Physics_Client (edict_t	*ent, int num)
 		
 		// give inventory items
 		sv_player->v.items = (int)sv_player->v.items | ap_inventory_flags;
-		
+
+		if (rogue) {
+			val = GetEdictFieldValueByName (sv_player, "items2");
+			val->_float = (int)val->_float | ap_inventory2_flags;
+		}
 		// check inventory uses and refresh flags
 
 		//set max ammo
@@ -1022,6 +1039,17 @@ void SV_Physics_Client (edict_t	*ent, int num)
 		val = GetEdictFieldValueByName (sv_player, "ap_max_cells");
 		val->_float = ap_max_ammo_arr[3];
 
+		if (rogue) {
+			val = GetEdictFieldValueByName (sv_player, "ap_max_lavanails");
+			val->_float = ap_max_ammo_arr[4];
+
+			val = GetEdictFieldValueByName (sv_player, "ap_max_multirockets");
+			val->_float = ap_max_ammo_arr[5];
+
+			val = GetEdictFieldValueByName (sv_player, "ap_max_plasma");
+			val->_float = ap_max_ammo_arr[6];
+		}
+
 		// give ammo
 		if (ap_give_ammo) {
 			val = GetEdictFieldValueByName (sv_player, "ap_shells");
@@ -1032,13 +1060,21 @@ void SV_Physics_Client (edict_t	*ent, int num)
 			val->_float = ap_give_ammo_arr[2];
 			val = GetEdictFieldValueByName (sv_player, "ap_cells");
 			val->_float = ap_give_ammo_arr[3];
+			if (rogue) {
+				val = GetEdictFieldValueByName (sv_player, "ap_lavanails");
+				val->_float = ap_give_ammo_arr[4];
+				val = GetEdictFieldValueByName (sv_player, "ap_multirockets");
+				val->_float = ap_give_ammo_arr[5];
+				val = GetEdictFieldValueByName (sv_player, "ap_plasma");
+				val->_float = ap_give_ammo_arr[6];
+			}
 
-			for (int i = 0; i < AMMO_MAX; i++)
+			for (int i = 0; i < ap_ammo_max; i++)
 			{
 				ap_give_ammo_arr[i] = 0;
 			}
 
-			//Cbuf_AddText ("impulse 238\n");
+			Cbuf_AddText ("impulse 238\n");
 
 			ap_give_ammo = 0;
 		}
@@ -1172,7 +1208,7 @@ void SV_Physics_Client (edict_t	*ent, int num)
 		// also send all_kills because killcount is bugged
 		if (CL_InCutscene () && !strcmp (sv.name, "end"))
 		{
-			AP_CheckLocation (1717686674820885145, "exits");
+			AP_SendExit (sv.name);
 			const char* suffix = "all_kills";
 			char* combined_string = (char*)malloc ((10 + strlen (sv.name) + 1) * sizeof (char));
 			if (combined_string) {
@@ -1180,10 +1216,12 @@ void SV_Physics_Client (edict_t	*ent, int num)
 				strcat (combined_string, suffix);
 			}
 			uint64_t loc_hash = generate_hash (999, 999, 999, combined_string);
-			if (!AP_DEBUG_SPAWN) AP_CheckLocation (loc_hash, "items");
+			AP_CheckLocation (loc_hash, "items");
 		}
-		else if (CL_InCutscene () && hipnotic && !strcmp (sv.name, "hipend"))
-			AP_CheckLocation (13397806965560897405, "exits");
+		else if (hipnotic && CL_InCutscene () && !strcmp (sv.name, "hipend"))
+			AP_SendExit (sv.name);
+		else if (rogue && cl.intermission && !strcmp (sv.name, "r2m8"))
+			AP_SendExit (sv.name);
 
 		// play progressive sound cue if cvar is set
 		if ((ap_prog_sounds > 0) && ap_playsound.value && (qcvm->time > next_sound_time)) {

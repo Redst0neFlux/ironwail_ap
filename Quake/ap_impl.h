@@ -40,7 +40,7 @@ extern int ap_debug_shootswitch;
 
 // MAX defines to clamp arrays
 #define INV_MAX 8
-#define AMMO_MAX 4
+#define AMMO_MAX 7
 #define TRAPS_MAX 5
 
 // Location ID for AP checks.
@@ -83,7 +83,9 @@ typedef struct {
 
 extern ap_location_state_t ap_locations[AP_MAX_LOCATION];  // All location states for a shuffle
 extern int ap_inventory_flags;
+extern int ap_inventory2_flags;
 
+extern int ap_ammo_max;
 extern int ap_give_ammo;
 extern int ap_give_ammo_arr[];
 extern int ap_max_ammo_arr[];
@@ -101,8 +103,6 @@ extern int ap_prog_sounds;
 extern int ap_active_traps[];
 
 extern int ap_skill;
-
-extern int ap_shub_defeated;
 
 extern int ap_fresh_map;
 
@@ -187,6 +187,7 @@ extern void ap_set_ammo_to_max ();
 // Extern AP Lib Funcs
 extern void ap_init_connection ();
 extern int AP_CheckLocation (uint64_t loc_hash, char* loc_type);
+extern void AP_SendExit (char* mapname);
 extern VictoryStats AP_VictoryStats (char* victory_name);
 extern void ap_on_map_load (char* mapname);
 extern uint64_t* ap_get_key_flags (const char* mapname);

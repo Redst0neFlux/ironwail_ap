@@ -185,6 +185,9 @@ void M_Main_Mousemove (float cx, float cy);
 	//void M_Help_Mousemove (float cx, float cy);
 	//void M_Quit_Mousemove (float cx, float cy);
 
+// [ap]
+	void M_FindKeysForCommand (const char* command, int* threekeys);
+
 static double m_lastsoundtime;
 static char m_lastsound[MAX_QPATH];
 
@@ -2065,9 +2068,6 @@ void M_Maps_Draw (void)
 	}
 
 	M_List_DrawSearch (&mapsmenu.list, x, y + mapsmenu.list.viewsize*gap_size + 4, namecols);
-
-	// [ap]Draw goal stats
-	
 }
 
 void M_Maps_Char (int key)
@@ -2084,7 +2084,17 @@ void M_Maps_Key (int key)
 {
 	int x, y;
 	int gap_size = 16;
-
+	// [ap] exit out of map menu if map-menu keybind is pressed
+	int	keys[3];
+	M_FindKeysForCommand ("menu_maps", keys);
+	for (int j = 0; j < 3 && keys[j] != -1; j++) {
+		if (key == keys[j]) {
+			IN_Activate ();
+			key_dest = key_game;
+			m_state = m_none;
+			break;
+		}
+	}
 	if (mapsmenu.scrollbar_grab)
 	{
 		switch (key)
@@ -5112,10 +5122,13 @@ static const menukeybind_t menubinds[] =
 	{"impulse 231",		"AP Invuln",			KDM_ANY},
 	{"impulse 232",		"AP Biosuit",			KDM_ANY},
 	{"impulse 233",		"AP Invis",				KDM_ANY},
+	{"",				"",						KDM_ANY},
 	{"impulse 234",		"AP Backpack",			KDM_ANY},
 	{"impulse 235",		"AP Medkit",			KDM_ANY},
 	{"impulse 236",		"AP Armor",				KDM_ANY},
+	{"",				"",						KDM_ANY},
 	{"automap",			"AP Automap",			KDM_ANY},
+	{"menu_maps",		"AP Map Menu",			KDM_ANY},
 };
 
 #define	NUMCOMMANDS		Q_COUNTOF(menubinds)

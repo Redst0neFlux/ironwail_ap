@@ -3249,6 +3249,17 @@ static void Host_Spawn_f (void)
 		val = GetEdictFieldValueByName (sv_player, "ap_max_cells");
 		val->_float = ap_max_ammo_arr[3];
 
+		if (rogue) {
+			val = GetEdictFieldValueByName (sv_player, "ap_max_lavanails");
+			val->_float = ap_max_ammo_arr[4];
+
+			val = GetEdictFieldValueByName (sv_player, "ap_max_multirockets");
+			val->_float = ap_max_ammo_arr[5];
+
+			val = GetEdictFieldValueByName (sv_player, "ap_max_plasma");
+			val->_float = ap_max_ammo_arr[6];
+		}
+
 		val = GetEdictFieldValueByName (sv_player, "ap_shells");
 		val->_float = ap_max_ammo_arr[0];
 		val = GetEdictFieldValueByName (sv_player, "ap_nails");
@@ -3257,6 +3268,16 @@ static void Host_Spawn_f (void)
 		val->_float = ap_max_ammo_arr[2];
 		val = GetEdictFieldValueByName (sv_player, "ap_cells");
 		val->_float = ap_max_ammo_arr[3];
+
+		if (rogue) {
+			val = GetEdictFieldValueByName (sv_player, "ap_lavanails");
+			val->_float = ap_max_ammo_arr[4];
+			val = GetEdictFieldValueByName (sv_player, "ap_multirockets");
+			val->_float = ap_max_ammo_arr[5];
+			val = GetEdictFieldValueByName (sv_player, "ap_plasma");
+			val->_float = ap_max_ammo_arr[6];
+		}
+
 		Cbuf_AddText ("impulse 238\n");
 	}
 }

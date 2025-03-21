@@ -1594,7 +1594,9 @@ void ED_LoadFromFile (const char *data)
 	// look for the spawn function
 		
 		// [ap] Overwrite spawn function of items and weapons with ap models
-		if (!strncmp (PR_GetString (ent->v.classname), "item_", 5) || !strncmp (PR_GetString (ent->v.classname), "weapon_", 7))
+		if (rogue && (!strcmp (PR_GetString (ent->v.classname), "item_time_machine") | !strcmp (PR_GetString (ent->v.classname), "item_time_core")))
+			func = ED_FindFunction (classname);
+		else if (!strncmp (PR_GetString (ent->v.classname), "item_", 5) || !strncmp (PR_GetString (ent->v.classname), "weapon_", 7))
 		{
 			ap_item_count += 1;
 			ED_Print_JSON (ent, ap_item_count);
@@ -1603,6 +1605,9 @@ void ED_LoadFromFile (const char *data)
 
 			// [ap] offset edict origin for .bsp models
 			// TODO: Might need some tweaking
+			// 
+			// Overwrite for timemachine in rogue
+			
 			if (!strcmp (PR_GetString (ent->v.classname), "item_shells") || !strcmp (PR_GetString (ent->v.classname), "item_spikes")
 				|| !strcmp (PR_GetString (ent->v.classname), "item_rockets") || !strcmp (PR_GetString (ent->v.classname), "item_cells")
 				|| !strcmp (PR_GetString (ent->v.classname), "item_health"))
@@ -1705,18 +1710,6 @@ void ED_LoadFromFile (const char *data)
 		edict_t* remove_ent = (edict_t*)remove_after[i];
 		ap_printfd ("Removing after: %s (%i) %f\n", PR_GetString (remove_ent->v.classname),NUM_FOR_EDICT (remove_ent), remove_ent->v.spawnflags);
 		ED_Free (remove_ent);
-	}
-	if (AP_DUMP_EDICT) {
-		const char* prefix = "condump ";
-		combined_string = (char*)malloc ((9 + strlen (sv.name) + 1 + 2) * sizeof (char));
-		if (combined_string) {
-			strcpy (combined_string, prefix);
-			strcat (combined_string, sv.name);
-			strcat (combined_string, "\n");
-		}
-		Cbuf_AddText (combined_string);
-		free (combined_string);
-		Cbuf_AddText ("clear\n");
 	}
 }
 
