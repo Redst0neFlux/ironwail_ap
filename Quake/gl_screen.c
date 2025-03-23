@@ -102,9 +102,9 @@ cvar_t		ap_shorthud = { "ap_shorthud", "0", CVAR_ARCHIVE };
 cvar_t		ap_alwaysshowunlocks = { "ap_alwaysshowunlocks", "1", CVAR_ARCHIVE };
 cvar_t		ap_alwaysshowchecks = { "ap_alwaysshowchecks", "1", CVAR_ARCHIVE };
 cvar_t		ap_alwaysshowinventory = { "ap_alwaysshowinventory", "1", CVAR_ARCHIVE };
-cvar_t		ap_printdoorblocked = { "ap_printdoorblocked", "0", CVAR_ARCHIVE };
-cvar_t		ap_printbuttonblocked = { "ap_printbuttonblocked", "0", CVAR_ARCHIVE };
-cvar_t		ap_playsound = { "ap_playsound", "0", CVAR_ARCHIVE };
+cvar_t		ap_printdoorblocked = { "ap_printdoorblocked", "1", CVAR_ARCHIVE };
+cvar_t		ap_printbuttonblocked = { "ap_printbuttonblocked", "1", CVAR_ARCHIVE };
+cvar_t		ap_playsound = { "ap_playsound", "1", CVAR_ARCHIVE };
 cvar_t		ap_showmonsters = { "ap_showmonsters", "0", CVAR_ARCHIVE };
 
 //johnfitz

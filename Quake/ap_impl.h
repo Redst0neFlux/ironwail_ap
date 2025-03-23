@@ -81,6 +81,8 @@ typedef struct {
 	ap_net_id_t item;  // Item id at the location. Only valid if state & AP_LOC_HINTED != 0
 } ap_location_state_t;
 
+extern char* ap_basegame;
+
 extern ap_location_state_t ap_locations[AP_MAX_LOCATION];  // All location states for a shuffle
 extern int ap_inventory_flags;
 extern int ap_inventory2_flags;

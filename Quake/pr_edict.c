@@ -1572,12 +1572,14 @@ void ED_LoadFromFile (const char *data)
 				else ap_printfd ("Skill level mismatch spawn enforced %s (%i)\n", PR_GetString (ent->v.classname), NUM_FOR_EDICT (ent));
 			}
 		}
+		/*
 		// always remove func_bossgate
 		else if (!Q_strcmp(classname, "func_bossgate")) {
 				remove_after[remove_array_index] = ent;
 				remove_array_index++;
 				continue;
 		}
+		*/
 
 		// remove monsters if nomonsters is set
 		if (sv.nomonsters && !Q_strncmp (classname, "monster_", 8))
@@ -1594,6 +1596,8 @@ void ED_LoadFromFile (const char *data)
 	// look for the spawn function
 		
 		// [ap] Overwrite spawn function of items and weapons with ap models
+
+		// exception for the time machine on the final map of rogue
 		if (rogue && (!strcmp (PR_GetString (ent->v.classname), "item_time_machine") | !strcmp (PR_GetString (ent->v.classname), "item_time_core")))
 			func = ED_FindFunction (classname);
 		else if (!strncmp (PR_GetString (ent->v.classname), "item_", 5) || !strncmp (PR_GetString (ent->v.classname), "weapon_", 7))

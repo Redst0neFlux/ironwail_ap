@@ -11,12 +11,7 @@ build/
 /out/
 update_submodule.txt
 *.sav
-Windows/VisualStudio/id1
-Windows/VisualStudio/hipnotic
-Windows/VisualStudio/rogue
 *.txt
 *.json
 *.cache
-/Windows/VisualStudio/dopa
-/Windows/VisualStudio/dwellv2p2
 /Windows/VisualStudio

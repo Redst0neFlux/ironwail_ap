@@ -160,9 +160,6 @@ int main(int argc, char *argv[])
 	if (!parms.membase)
 		Sys_Error ("Not enough memory free; check disk space\n");
 
-	// [ap] wait for connection status, quit if no connection
-	if (AP_DEBUG_SPAWN) ap_debug_init ();
-	else ap_init_connection ();
 
 	Sys_Printf("Host_Init\n");
 	Host_Init();
