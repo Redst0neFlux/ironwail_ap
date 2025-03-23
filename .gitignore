@@ -17,3 +17,6 @@ Windows/VisualStudio/rogue
 *.txt
 *.json
 *.cache
+/Windows/VisualStudio/dopa
+/Windows/VisualStudio/dwellv2p2
+/Windows/VisualStudio
