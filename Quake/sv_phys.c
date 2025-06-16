@@ -1028,26 +1028,26 @@ void SV_Physics_Client (edict_t	*ent, int num)
 
 		//set max ammo
 		val = GetEdictFieldValueByName (sv_player, "ap_max_shells");
-		val->_float = ap_max_ammo_arr[0];
+		val->_float = fmin (ap_max_ammo_arr[0], ap_max_ammo_vanilla_arr[0]);
 
 		val = GetEdictFieldValueByName (sv_player, "ap_max_nails");
-		val->_float = ap_max_ammo_arr[1];
+		val->_float = fmin (ap_max_ammo_arr[1], ap_max_ammo_vanilla_arr[1]);
 
 		val = GetEdictFieldValueByName (sv_player, "ap_max_rockets");
-		val->_float = ap_max_ammo_arr[2];
+		val->_float = fmin (ap_max_ammo_arr[2], ap_max_ammo_vanilla_arr[2]);
 
 		val = GetEdictFieldValueByName (sv_player, "ap_max_cells");
-		val->_float = ap_max_ammo_arr[3];
+		val->_float = fmin (ap_max_ammo_arr[3], ap_max_ammo_vanilla_arr[3]);
 
 		if (rogue) {
 			val = GetEdictFieldValueByName (sv_player, "ap_max_lavanails");
-			val->_float = ap_max_ammo_arr[4];
+			val->_float = fmin (ap_max_ammo_arr[4], ap_max_ammo_vanilla_arr[4]);
 
 			val = GetEdictFieldValueByName (sv_player, "ap_max_multirockets");
-			val->_float = ap_max_ammo_arr[5];
+			val->_float = fmin (ap_max_ammo_arr[5], ap_max_ammo_vanilla_arr[5]);
 
 			val = GetEdictFieldValueByName (sv_player, "ap_max_plasma");
-			val->_float = ap_max_ammo_arr[6];
+			val->_float = fmin (ap_max_ammo_arr[6], ap_max_ammo_vanilla_arr[6]);
 		}
 
 		// give ammo

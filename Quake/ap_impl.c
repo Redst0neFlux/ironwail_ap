@@ -37,6 +37,7 @@ int ap_give_ammo = 0;
 int ap_give_ammo_arr[AMMO_MAX]; // 0 shells, 1 spikes, 2 rockets, 3 batteries, 4 lava nails, 5 plasma ammo, 6 multi rockets
 int ap_max_ammo_arr[AMMO_MAX]; // 0 shells, 1 spikes, 2 rockets, 3 batteries, 4 lava nails, 5 plasma ammo, 6 multi rockets
 int ap_max_ammo_default_arr[AMMO_MAX] = { 25, 30, 5, 25, 30, 15, 5}; // 0 shells, 1 spikes, 2 rockets, 3 batteries, 4 lava nails, 5 plasma ammo, 6 multi rockets
+int ap_max_ammo_vanilla_arr[AMMO_MAX] = { 100, 200, 100, 200, 200, 100, 100 }; // 0 shells, 1 spikes, 2 rockets, 3 batteries, 4 lava nails, 5 plasma ammo, 6 multi rockets
 
 int ap_give_inv = 0;
 int ap_inv_max_arr[INV_MAX]; // 0 quad, 1 invuln, 2 bio, 3 invis, 4 backpack, 5 medkit, 6 armor
@@ -181,8 +182,6 @@ GHashTable* ap_totalcollected_data = NULL;
 GHashTable* ap_itemcount_map = NULL;
 
 int ap_received_scout_info = 0;
-
-uint64_t always_spawn_edicts_array[1] = { 0 };
 
 GHashTable* ability_unlocks;
 static GString* remote_id_checksum;
@@ -482,17 +481,11 @@ extern int ap_replace_edict (uint64_t loc_hash, char* loc_type)
   Delete = 1
   Do Nothing = 0
 */
-extern int ap_free_collected_edicts (uint64_t loc_hash, char* loc_type)
+extern int ap_is_edict_collected (uint64_t loc_hash, char* loc_type)
 {
 	ap_location_t item_location = edict_to_ap_locid (loc_hash, loc_type);
-	// Check allow list entries
-	int array_size = sizeof (always_spawn_edicts_array) / sizeof (always_spawn_edicts_array[0]);
-	for (int i = 0; i < array_size; i++) {
-		if (loc_hash == always_spawn_edicts_array[i]) {
-			return 0;
-		}
-	}
-	if (AP_LOCATION_CHECKED (item_location)) return 1;
+	if (AP_LOCATION_CHECKED (item_location)) 
+		return 1;
 
 	return 0;
 }
@@ -1148,7 +1141,7 @@ static void ap_get_item (ap_net_id_t item_id, bool silent, bool is_new)
 {
 	json_t* item_info = g_hash_table_lookup (ap_item_info, &item_id);
 	if (!item_info) return;
-	json_print_sys ("item_info", item_info);
+	//json_print_sys ("item_info", item_info);
 	// Check if we have a dynamic override for the item in our seed slot data
 	GString* gs_key = g_string_new ("dynamic");
 	json_t* dynamic_info = g_hash_table_lookup (ap_game_settings, gs_key);
@@ -1981,7 +1974,7 @@ void AP_Initialize (json_t* game_config, ap_connection_settings_t connection)
 	init_location_table (json_object_get (game_config, "locations"));
 	init_item_table (json_object_get (game_config, "items"));
 	
-	AP_SetClientVersion (AP_NetworkVersion_new (0, 5, 1));
+	AP_SetClientVersion (AP_NetworkVersion_new (0, 6, 1));
 	AP_SetDeathLinkSupported (TRUE);
 
 	AP_Init (connection.ip, connection.port, connection.game, connection.player, connection.password);

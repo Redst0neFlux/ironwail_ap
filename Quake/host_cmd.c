@@ -2686,7 +2686,8 @@ static void Host_Loadgame_f (void)
 
 			// remove from loadgame data if collected
 			// TODO: Is this deletion method stable? baseline.origin is 0,0,0 in case of previous free
-			if ((!strncmp (PR_GetString (ent->v.classname), "item_", 5) || !strncmp (PR_GetString (ent->v.classname), "weapon_", 7))) {
+			if ((!strncmp (PR_GetString (ent->v.classname), "item_", 5) || !strncmp (PR_GetString (ent->v.classname), "weapon_", 7))) 
+			{
 				uint64_t loc_hash;
 				if (!strcmp (PR_GetString (ent->v.classname), "item_shells") || !strcmp (PR_GetString (ent->v.classname), "item_spikes")
 					|| !strcmp (PR_GetString (ent->v.classname), "item_rockets") || !strcmp (PR_GetString (ent->v.classname), "item_cells")
@@ -2698,15 +2699,30 @@ static void Host_Loadgame_f (void)
 					loc_hash = generate_hash (ent->baseline.origin[0], ent->baseline.origin[1], ent->baseline.origin[2], PR_GetString (ent->v.classname));
 				char* loc_name = edict_get_loc_name (loc_hash, "items");
 				if (loc_name && !strcmp (loc_name, "") && ent->baseline.origin[0] == 0.0 && ent->baseline.origin[1] == 0.0 && ent->baseline.origin[2] == 0.0) {
-					ED_Free (ent);
+					if (ED_HasLinks (ent))
+						Con_DPrintf ("Found Links: %s\n",PR_GetString (ent->v.classname));
+					//else
+						//ED_Free (ent);
+				}
+				// Re-Enable items as white models if needed
+				else if (ap_is_edict_collected (loc_hash, "items") && ED_HasLinks (ent)) {
+					ent->v.model = PR_SetEngineString ("progs/ap-logo-white.mdl");
+					ent->v.solid = SOLID_TRIGGER;
 				}
 			}
-			else if ((!strncmp (PR_GetString (ent->v.classname), "trigger_secret", 14))) {
+			else if ((!strcmp (PR_GetString (ent->v.classname), "trigger_secret"))) {
 				uint64_t loc_hash = generate_hash (ent->v.absmax[0], ent->v.absmax[1], ent->v.absmax[2], PR_GetString (ent->v.classname));
-				if (ap_free_collected_edicts (loc_hash, "secrets")) {
+				if (ap_is_edict_collected (loc_hash, "secrets")) {
 					ED_Free (ent);
 				}
 			}
+			/*
+			else if ((!strcmp (PR_GetString (ent->v.classname), "trigger_changelevel"))) {
+				uint64_t loc_hash = generate_hash (ent->v.absmax[0], ent->v.absmax[1], ent->v.absmax[2], PR_GetString (ent->v.classname));
+				if (ap_is_edict_collected (loc_hash, "exits")) {
+					ED_Free (ent);
+				}
+			}*/
 
 			// link it into the bsp tree
 			if (!ent->free)

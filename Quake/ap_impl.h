@@ -91,6 +91,7 @@ extern int ap_ammo_max;
 extern int ap_give_ammo;
 extern int ap_give_ammo_arr[];
 extern int ap_max_ammo_arr[];
+extern int ap_max_ammo_vanilla_arr[];
 
 extern int ap_give_inv;
 extern int ap_inv_max_arr[];
@@ -201,7 +202,7 @@ extern void ap_sync_inventory ();
 int AP_IsLocHinted (uint64_t loc_hash, char* loc_type);
 
 extern int ap_replace_edict (uint64_t loc_hash, char* loc_type);
-extern int ap_free_collected_edicts (uint64_t loc_hash, char* loc_type);
+extern int ap_is_edict_collected (uint64_t loc_hash, char* loc_type);
 extern char* edict_get_loc_name (uint64_t loc_hash, char* loc_type);
 
 extern void ap_printf (const char* format, ...);

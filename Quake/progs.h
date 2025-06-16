@@ -338,6 +338,8 @@ const char *ED_FieldValueString (edict_t *ed, ddef_t *d);
 void ED_Print (edict_t *ed);
 void ED_Write (savedata_t *save, edict_t *ed);
 const char *ED_ParseEdict (const char *data, edict_t *ent);
+//[ap]
+qboolean ED_HasLinks (const edict_t* ent);
 
 void ED_WriteGlobals (savedata_t *save);
 const char *ED_ParseGlobals (const char *data);

@@ -663,6 +663,11 @@ static void R_SortEntities (void)
 	for (i = 0; i < cl_numvisedicts; i++)
 	{
 		entity_t *ent = cl_visedicts[i];
+
+		// [ap] Turn white ap models translucent
+		if (!strcmp (ent->model->name, "progs/ap-logo-white.mdl"))
+			ent->alpha = 64;
+
 		qboolean translucent = !ENTALPHA_OPAQUE (ent->alpha);
 
 		if (translucent && alphamode == ALPHAMODE_SORTED)
@@ -1513,6 +1518,10 @@ static void R_ShowBoundingBoxes (void)
 		if (r_showbboxes_health.value && (ed->v.health <= 0) == (r_showbboxes_health.value > 0))
 			continue;
 
+		//[ap] dont show "removed" item/weapon edicts
+		if (!strcmp(PR_GetString(ed->v.model), "") && strncmp (PR_GetString (ed->v.classname), "trigger_", 8) && !AP_DEBUG)
+			continue;
+
 		// Compute bounding box (16 units wide for point entities)
 		extend = VectorCompare (ed->v.mins, ed->v.maxs) ? 8.f : 0.f;
 		for (j = 0; j < 3; j++)
@@ -1549,11 +1558,14 @@ static void R_ShowBoundingBoxes (void)
 			focused = ed;
 		}
 
+		// [ap] Don't add already collected ap model edicts
+		if (!AP_DEBUG && !strcmp(PR_GetString (ed->v.model), "progs/ap-logo-white.mdl"))
+			continue;
 		// Add edict to list
 		R_AddHighlightedEntity (ed, SHOWBBOX_LINK_NONE);
 	}
 
-	if (focused)
+	if (focused && strcmp (PR_GetString (focused->v.model), "progs/ap-logo-white.mdl"))
 		VEC_PUSH (bbox_linked, focused);
 	// [ap] only draw linking arrows if debug is on or no filter is set
 	if (focused && r_showbboxes_links.value && (!ap_can_automap (sv.name) || AP_DEBUG || !strcmp(r_showbboxes_filter_strings, "")))
@@ -1572,7 +1584,7 @@ static void R_ShowBoundingBoxes (void)
 				R_AddHighlightedEntity (ed, SHOWBBOX_LINK_OUTGOING);
 			}
 		}
-
+		
 		// Inspect all other edicts to find incoming links
 		// (either entity field references or target/targetname matches)
 		if ((int)r_showbboxes_links.value & SHOWBBOX_LINK_INCOMING || r_showbboxes_targets.value)
@@ -1671,6 +1683,7 @@ static void R_ShowBoundingBoxes (void)
 				loc_hash = generate_hash (ed->baseline.origin[0], ed->baseline.origin[1], ed->baseline.origin[2], PR_GetString (ed->v.classname));
 			
 			if ( ap_highlighthinted.value && (AP_IsLocHinted (loc_hash, "items"))) color = 0x7F00FF00;
+			if ( AP_DEBUG && !strcmp (PR_GetString (ed->v.model), "progs/ap-logo-white.mdl")) color = 0x7F5c5c00;
 			//box entity
 			VectorAdd (ed->v.mins, ed->v.origin, mins);
 			VectorAdd (ed->v.maxs, ed->v.origin, maxs);

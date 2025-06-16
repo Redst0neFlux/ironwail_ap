@@ -800,10 +800,40 @@ void SCR_DrawAPHUD (void)
 		uint16_t collected = 0;
 		uint16_t total = 0;
 		ap_remaining_items (&collected, &total, sv.name);
-		sprintf (str, "AP: %i/%i", collected, total);
+		sprintf (str, "I: %i/%i", collected, total);
+		if (total == collected) {
+			size_t len = strlen (str);
+			for (size_t j = 0; j < len; j++) {
+				str[j] ^= 128;
+			}
+		}
+		x = glcanvas.right - (strlen (str) << 3);
+		y = glcanvas.bottom - 100;
+		Draw_String (x, y, str);
+
+		ap_remaining_secrets (&collected, &total, sv.name);
+		sprintf (str, "S: %i/%i", collected, total);
+		if (total == collected) {
+			size_t len = strlen (str);
+			for (size_t j = 0; j < len; j++) {
+				str[j] ^= 128;
+			}
+		}
+		x = glcanvas.right - (strlen (str) << 3);
+		y = glcanvas.bottom - 90;
+		Draw_String (x, y, str);
+
+		ap_remaining_exits (&collected, &total, sv.name);
+		sprintf (str, "E: %i/%i", collected, total);
+		if (total == collected) {
+			size_t len = strlen (str);
+			for (size_t j = 0; j < len; j++) {
+				str[j] ^= 128;
+			}
+		}
 		x = glcanvas.right - (strlen (str) << 3);
 		y = glcanvas.bottom - 80;
-		Draw_String (x, y, str);
+		Draw_String (x, y, str);		
 	}	
 
 	if (ap_scoreboard || ap_alwaysshowinventory.value) {
@@ -829,7 +859,37 @@ void SCR_DrawAPHUD (void)
 			uint16_t collected = 0;
 			uint16_t total = 0;
 			ap_remaining_items (&collected, &total, sv.name);
-			sprintf (str, "AP: %i/%i", collected, total);
+			sprintf (str, "I: %i/%i", collected, total);
+			if (total == collected) {
+				size_t len = strlen (str);
+				for (size_t j = 0; j < len; j++) {
+					str[j] ^= 128;
+				}
+			}
+			x = glcanvas.right - (strlen (str) << 3);
+			y = glcanvas.bottom - 100;
+			Draw_String (x, y, str);
+
+			ap_remaining_secrets (&collected, &total, sv.name);
+			sprintf (str, "S: %i/%i", collected, total);
+			if (total == collected) {
+				size_t len = strlen (str);
+				for (size_t j = 0; j < len; j++) {
+					str[j] ^= 128;
+				}
+			}
+			x = glcanvas.right - (strlen (str) << 3);
+			y = glcanvas.bottom - 90;
+			Draw_String (x, y, str);
+
+			ap_remaining_exits (&collected, &total, sv.name);
+			sprintf (str, "E: %i/%i", collected, total);
+			if (total == collected) {
+				size_t len = strlen (str);
+				for (size_t j = 0; j < len; j++) {
+					str[j] ^= 128;
+				}
+			}
 			x = glcanvas.right - (strlen (str) << 3);
 			y = glcanvas.bottom - 80;
 			Draw_String (x, y, str);

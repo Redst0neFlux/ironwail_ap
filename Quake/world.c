@@ -330,9 +330,10 @@ SV_AreaTriggerEdicts ( edict_t *ent, areanode_t *node, edict_t **list, int *list
 				loc_hash = generate_hash (touch->baseline.origin[0], touch->baseline.origin[1], touch->baseline.origin[2], PR_GetString (touch->v.classname));
 			if (!AP_DEBUG_SPAWN) AP_CheckLocation (loc_hash, "items");
 			else add_touched_edict (loc_hash, "items");
+			
 			// [ap] We are touching a checked location, free after 3 tics
-			// TODO: Maybe less tics?
-			if (AP_IsLocChecked(loc_hash, "items") || AP_DEBUG_SPAWN) {
+			// TODO: Does this even happen?
+			if ((AP_IsLocChecked (loc_hash, "items") && strcmp (PR_GetString (touch->v.model), "")) || AP_DEBUG_SPAWN) {
 				uint16_t* count = ap_get_itemcount (loc_hash);
 				if (count) {
 					count += 1;
@@ -430,7 +431,6 @@ void SV_TouchLinks (edict_t *ent)
 		pr_global_struct->self = EDICT_TO_PROG(touch);
 		pr_global_struct->other = EDICT_TO_PROG(ent);
 		pr_global_struct->time = qcvm->time;
-
 		PR_ExecuteProgram (touch->v.touch);
 
 		pr_global_struct->self = old_self;
