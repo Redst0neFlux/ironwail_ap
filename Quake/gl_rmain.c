@@ -666,7 +666,7 @@ static void R_SortEntities (void)
 
 		// [ap] Turn white ap models translucent
 		if (!strcmp (ent->model->name, "progs/ap-logo-white.mdl"))
-			ent->alpha = 64;
+			ent->alpha = 128;
 
 		qboolean translucent = !ENTALPHA_OPAQUE (ent->alpha);
 
@@ -1521,6 +1521,16 @@ static void R_ShowBoundingBoxes (void)
 		//[ap] dont show "removed" item/weapon edicts
 		if (!strcmp(PR_GetString(ed->v.model), "") && strncmp (PR_GetString (ed->v.classname), "trigger_", 8) && !AP_DEBUG)
 			continue;
+		else if (!strcmp (PR_GetString (ed->v.classname), "trigger_secret")) {
+			uint64_t loc_hash = generate_hash (ed->v.absmax[0], ed->v.absmax[1], ed->v.absmax[2], PR_GetString (ed->v.classname));
+			if (ap_is_edict_collected (loc_hash, "secrets"))
+				continue;
+		}
+		else if (!strcmp (PR_GetString (ed->v.classname), "trigger_changelevel")) {
+			uint64_t loc_hash = generate_hash (ed->v.absmax[0], ed->v.absmax[1], ed->v.absmax[2], PR_GetString (ed->v.classname));
+			if (ap_is_edict_collected (loc_hash, "exits"))
+				continue;
+		}
 
 		// Compute bounding box (16 units wide for point entities)
 		extend = VectorCompare (ed->v.mins, ed->v.maxs) ? 8.f : 0.f;
@@ -1559,14 +1569,18 @@ static void R_ShowBoundingBoxes (void)
 		}
 
 		// [ap] Don't add already collected ap model edicts
-		if (!AP_DEBUG && !strcmp(PR_GetString (ed->v.model), "progs/ap-logo-white.mdl"))
+		if ( !AP_DEBUG && str_return_numeric_state (PR_GetString (ed->v.netname)) & 1 )
 			continue;
 		// Add edict to list
 		R_AddHighlightedEntity (ed, SHOWBBOX_LINK_NONE);
 	}
 
-	if (focused && strcmp (PR_GetString (focused->v.model), "progs/ap-logo-white.mdl"))
+	if (focused && (AP_DEBUG || !(str_return_numeric_state (PR_GetString (focused->v.netname)) & 1)))
 		VEC_PUSH (bbox_linked, focused);
+	/*if (focused && AP_DEBUG) {
+		Con_SafePrintf ("NName %s Solid %f MIndex %f\n", PR_GetString(focused->v.netname), focused->v.solid, focused->v.modelindex);
+		//Con_SafePrintf ("Class %s MIndex %f Model %s\n",PR_GetString(focused->v.classname), focused->v.modelindex, PR_GetString (focused->v.model));
+	}*/
 	// [ap] only draw linking arrows if debug is on or no filter is set
 	if (focused && r_showbboxes_links.value && (!ap_can_automap (sv.name) || AP_DEBUG || !strcmp(r_showbboxes_filter_strings, "")))
 	{
@@ -1683,7 +1697,8 @@ static void R_ShowBoundingBoxes (void)
 				loc_hash = generate_hash (ed->baseline.origin[0], ed->baseline.origin[1], ed->baseline.origin[2], PR_GetString (ed->v.classname));
 			
 			if ( ap_highlighthinted.value && (AP_IsLocHinted (loc_hash, "items"))) color = 0x7F00FF00;
-			if ( AP_DEBUG && !strcmp (PR_GetString (ed->v.model), "progs/ap-logo-white.mdl")) color = 0x7F5c5c00;
+			
+			if ( AP_DEBUG && str_return_numeric_state (PR_GetString (ed->v.netname)) & 2) color = 0x7F5c5c00;
 			//box entity
 			VectorAdd (ed->v.mins, ed->v.origin, mins);
 			VectorAdd (ed->v.maxs, ed->v.origin, maxs);

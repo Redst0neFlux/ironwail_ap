@@ -340,6 +340,10 @@ void ED_Write (savedata_t *save, edict_t *ed);
 const char *ED_ParseEdict (const char *data, edict_t *ent);
 //[ap]
 qboolean ED_HasLinks (const edict_t* ent);
+qboolean ED_HasTargets (const edict_t* ent);
+char* str_add_numeric_state (const char* original_string, bool checked, bool respawn);
+int str_return_numeric_state (const char* item_string);
+extern float last_trigger_change;
 
 void ED_WriteGlobals (savedata_t *save);
 const char *ED_ParseGlobals (const char *data);

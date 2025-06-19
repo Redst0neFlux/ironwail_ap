@@ -1032,6 +1032,8 @@ void AP_ProcessMessages ()
 			{
 				struct AP_ItemRecvMessage* out_msg = AP_GetLatestMessage ();
 				g_string_printf (print_msg, "Received %s from %s\n", out_msg->item, out_msg->sendPlayer);
+				if (strcmp (out_msg->sendPlayer, ap_connection_settings.player))
+					ap_prog_sounds += 1;
 				message_parts = create_message_parts_array (print_msg->str, out_msg->item, out_msg->sendPlayer, NULL, NULL, NULL);
 				break;
 			}
@@ -1156,7 +1158,6 @@ static void ap_get_item (ap_net_id_t item_id, bool silent, bool is_new)
 	// Store counts for stateful items
 	if (is_new && json_boolean_value (json_object_get (item_info, "persistent")))
 	{
-		ap_prog_sounds += 1;
 		uint16_t* count = malloc (sizeof (uint16_t));
 		*count = 0;
 		ap_net_id_t* key = malloc (sizeof (ap_net_id_t));
@@ -1191,6 +1192,7 @@ static void ap_get_item (ap_net_id_t item_id, bool silent, bool is_new)
 		ap_inventory_flags |= flags;
 	}
 	else if (!strcmp (item_type, "key")) {
+		ap_prog_sounds += 1;
 		// add key to lookup for map menu
 		GString* gs_key = g_string_new (json_string_value (json_object_get (item_info, "mapfile")));
 		uint64_t flags = json_integer_value (json_object_get (item_info, "flags"));
@@ -1205,6 +1207,7 @@ static void ap_get_item (ap_net_id_t item_id, bool silent, bool is_new)
 		}
 	}
 	else if (!strcmp (item_type, "map")) {
+		ap_prog_sounds += 1;
 		const char* mapfile = json_string_value (json_object_get (item_info, "mapfile"));
 		GString* gs_key = g_string_new (mapfile);
 		uint8_t unlocked = 1;
@@ -1217,6 +1220,7 @@ static void ap_get_item (ap_net_id_t item_id, bool silent, bool is_new)
 		g_hash_table_insert (ap_automap_unlocks, gs_key, &unlocked);
 	}
 	else if (!strcmp (item_type, "weapon")) {
+		ap_prog_sounds += 1;
 		uint64_t flags = json_integer_value (json_object_get (item_info, "flags"));
 		ap_inventory_flags |= flags;
 		// grab ammonum and fill give_arr
@@ -1256,7 +1260,11 @@ static void ap_get_item (ap_net_id_t item_id, bool silent, bool is_new)
 		ap_armor_amount = armor;
 	}
 	else if (!strcmp (item_type, "inventory")) {
+		
 		int invnum = (int)json_integer_value (json_object_get (item_info, "invnum"));
+		// only some inventory items get progressive sounds (not health/armor)
+		if (invnum <5 || invnum > 6) ap_prog_sounds += 1;
+
 		double capacity = (double)json_integer_value (json_object_get (item_info, "capacity"));
 		double factor = 1;
 		// apply mult factor for health and armor
@@ -1286,6 +1294,7 @@ static void ap_get_item (ap_net_id_t item_id, bool silent, bool is_new)
 		ap_give_inv = 1;
 	}
 	else if (!strcmp (item_type, "ability")) {
+		ap_prog_sounds += 1;
 		GString* gs_key = g_string_new(json_string_value(json_object_get(item_info, "enables")));
 		uint8_t unlocked = 1;
 		g_hash_table_insert (ap_ability_unlocks, gs_key, &unlocked);

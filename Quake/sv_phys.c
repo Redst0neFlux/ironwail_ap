@@ -79,6 +79,129 @@ void SV_CheckAllEnts (void)
 	}
 }
 
+char* str_add_numeric_state (const char* original_string, bool checked, bool respawn) {
+
+	int state_value = 0;
+	if (checked) {
+		state_value += 1;
+	}
+	if (respawn) {
+		state_value += 2;
+	}
+
+	size_t original_len = strlen (original_string);
+	char* new_string = NULL;
+
+	// Check if the original string currently has an affix
+	if (str_return_numeric_state (original_string) == 0) {
+		size_t required_size = original_len + 1 + 1; // +1 for digit, +1 for null terminator
+
+		new_string = (char*)malloc (required_size);
+		if (new_string == NULL) {
+			perror ("Failed to allocate memory for new string (no affix case)");
+			return NULL;
+		}
+
+		snprintf (new_string, required_size, "%s%d", original_string, state_value);
+	}
+	// String already has an affix, just replace the last char
+	else {
+		size_t required_size = original_len + 1; // +1 for null terminator
+
+		new_string = (char*)malloc (required_size);
+		if (new_string == NULL) {
+			perror ("Failed to allocate memory for new string (affix exists case)");
+			return NULL;
+		}
+
+		strcpy (new_string, original_string);
+
+		new_string[original_len - 1] = (char)(state_value + '0');
+	}
+
+	return new_string;
+}
+
+int str_return_numeric_state (const char* item_string) {
+
+	size_t len = strlen (item_string);
+
+	if (len > 0) {
+		char last_char = item_string[len - 1];
+
+		if (isdigit (last_char)) {
+			int state_value = last_char - '0';
+
+			if (state_value >= 0 && state_value <= 3) {
+				return state_value;
+			}
+		}
+	}
+	return 0;
+}
+
+static void SV_AdjustAPModels (void)
+{
+	int			e;
+	edict_t* check;
+
+	// check edicts for models that need to be adjusted
+	check = NEXT_EDICT (qcvm->edicts);
+	for (e = 1; e < qcvm->num_edicts; e++, check = NEXT_EDICT (check))
+	{
+		if (!strncmp (PR_GetString (check->v.classname), "item_", 5) || !strncmp (PR_GetString (check->v.classname), "weapon_", 7))
+		{
+		
+			uint64_t loc_hash = 0;
+			if (!strcmp (PR_GetString (check->v.classname), "item_shells") || !strcmp (PR_GetString (check->v.classname), "item_spikes")
+				|| !strcmp (PR_GetString (check->v.classname), "item_rockets") || !strcmp (PR_GetString (check->v.classname), "item_cells")
+				|| !strcmp (PR_GetString (check->v.classname), "item_health"))
+			{
+				loc_hash = generate_hash (check->baseline.origin[0] - 16, check->baseline.origin[1] - 16, check->baseline.origin[2], PR_GetString (check->v.classname));
+			}
+			else
+				loc_hash = generate_hash (check->baseline.origin[0], check->baseline.origin[1], check->baseline.origin[2], PR_GetString (check->v.classname));
+			if (AP_IsLocChecked (loc_hash, "items") || ((str_return_numeric_state(PR_GetString(check->v.netname)) & 1))) {
+				const char* netname = PR_GetString (check->v.netname);
+				if (!(str_return_numeric_state (PR_GetString (check->v.netname)) & 1)) {
+					// need to set checked status in netname
+					check->v.netname = PR_SetEngineString (str_add_numeric_state (netname, 1, 0));
+				}
+				if (ED_HasTargets (check)){
+					if ((last_trigger_change == 0.0f || fabsf (last_trigger_change - qcvm->time) > 1.0f))
+					{
+						if (!(str_return_numeric_state (netname) & 2))
+						{
+							// model not set, init correct model
+							check->v.solid = SOLID_TRIGGER;
+							check->v.modelindex = SV_ModelIndex ("progs/ap-logo-white.mdl");
+							check->v.model = PR_SetEngineString ("progs/ap-logo-white.mdl");
+							check->v.netname = PR_SetEngineString (str_add_numeric_state (netname, 1, 1));
+							last_trigger_change = qcvm->time;
+						}
+						else if (str_return_numeric_state (netname) & 3) {
+							// model is init'd, check if we need to respawn
+							if (check->v.modelindex != SV_ModelIndex ("progs/ap-logo-white.mdl") && check->v.solid != SOLID_TRIGGER) {							check->v.solid = SOLID_TRIGGER;
+								check->v.solid = SOLID_TRIGGER;
+								check->v.modelindex = SV_ModelIndex ("progs/ap-logo-white.mdl");
+								check->v.model = PR_SetEngineString ("progs/ap-logo-white.mdl");
+								last_trigger_change = qcvm->time;
+							}
+						}
+					}
+				}
+				else {
+					check->v.solid = SOLID_NOT;
+					check->v.modelindex = 0;
+					//check->v.model = 0;
+				}
+			}
+		}
+	}
+	
+}
+
+
 /*
 ================
 SV_CheckVelocity
@@ -1227,7 +1350,7 @@ void SV_Physics_Client (edict_t	*ent, int num)
 		if ((ap_prog_sounds > 0) && ap_playsound.value && (qcvm->time > next_sound_time)) {
 			SV_StartSound (sv_player, 0, "misc/talk.wav", 255, 1);
 			ap_prog_sounds -= 1;
-			next_sound_time = qcvm->time + 2;
+			next_sound_time = qcvm->time + 0.5;
 		}
 	}
 
@@ -1572,6 +1695,8 @@ void SV_Physics (void)
 		}
 	//johnfitz
 	}
+
+	SV_AdjustAPModels ();
 
 	if (pr_global_struct->force_retouch)
 		pr_global_struct->force_retouch--;

@@ -2697,26 +2697,14 @@ static void Host_Loadgame_f (void)
 				}
 				else
 					loc_hash = generate_hash (ent->baseline.origin[0], ent->baseline.origin[1], ent->baseline.origin[2], PR_GetString (ent->v.classname));
-				char* loc_name = edict_get_loc_name (loc_hash, "items");
-				if (loc_name && !strcmp (loc_name, "") && ent->baseline.origin[0] == 0.0 && ent->baseline.origin[1] == 0.0 && ent->baseline.origin[2] == 0.0) {
-					if (ED_HasLinks (ent))
-						Con_DPrintf ("Found Links: %s\n",PR_GetString (ent->v.classname));
-					//else
-						//ED_Free (ent);
-				}
-				// Re-Enable items as white models if needed
-				else if (ap_is_edict_collected (loc_hash, "items") && ED_HasLinks (ent)) {
-					ent->v.model = PR_SetEngineString ("progs/ap-logo-white.mdl");
-					ent->v.solid = SOLID_TRIGGER;
-				}
 			}
+			/*
 			else if ((!strcmp (PR_GetString (ent->v.classname), "trigger_secret"))) {
 				uint64_t loc_hash = generate_hash (ent->v.absmax[0], ent->v.absmax[1], ent->v.absmax[2], PR_GetString (ent->v.classname));
 				if (ap_is_edict_collected (loc_hash, "secrets")) {
 					ED_Free (ent);
 				}
 			}
-			/*
 			else if ((!strcmp (PR_GetString (ent->v.classname), "trigger_changelevel"))) {
 				uint64_t loc_hash = generate_hash (ent->v.absmax[0], ent->v.absmax[1], ent->v.absmax[2], PR_GetString (ent->v.classname));
 				if (ap_is_edict_collected (loc_hash, "exits")) {

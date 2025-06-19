@@ -274,7 +274,7 @@ void SV_UnlinkEdict (edict_t *ent)
 	ent->area.prev = ent->area.next = NULL;
 }
 
-
+extern float last_trigger_change = 0.0f;
 /*
 ====================
 SV_AreaTriggerEdicts
@@ -328,24 +328,28 @@ SV_AreaTriggerEdicts ( edict_t *ent, areanode_t *node, edict_t **list, int *list
 			}
 			else 
 				loc_hash = generate_hash (touch->baseline.origin[0], touch->baseline.origin[1], touch->baseline.origin[2], PR_GetString (touch->v.classname));
-			if (!AP_DEBUG_SPAWN) AP_CheckLocation (loc_hash, "items");
-			else add_touched_edict (loc_hash, "items");
 			
-			// [ap] We are touching a checked location, free after 3 tics
-			// TODO: Does this even happen?
-			if ((AP_IsLocChecked (loc_hash, "items") && strcmp (PR_GetString (touch->v.model), "")) || AP_DEBUG_SPAWN) {
-				uint16_t* count = ap_get_itemcount (loc_hash);
-				if (count) {
-					count += 1;
-					if (*count >= 3)
-					{
-						Cbuf_AddText ("bf\n");
-						ED_Free (touch);
-					}
-				}
-				else {
-					ap_save_itemcount (loc_hash, 0);
-				}
+			const char* netname = PR_GetString (touch->v.netname);
+			qboolean is_item_checked = (str_return_numeric_state (netname) & 1);
+			if (!AP_DEBUG_SPAWN && !is_item_checked) {
+				//item wasnt checked yet
+				AP_CheckLocation (loc_hash, "items");
+				touch->v.netname = PR_SetEngineString (str_add_numeric_state (netname, 1, 0));
+			}
+			else add_touched_edict (loc_hash, "items");
+			// we are touching an invisible location, dont interact
+			if (is_item_checked && touch->v.modelindex == 0)
+			{
+				//Con_SafePrintf ("Skipping touch func\n");
+			}
+			// [ap] We are touching a checked location
+			if ((fabsf (last_trigger_change - qcvm->time) > 1.0f && (is_item_checked && touch->v.modelindex != 0) || AP_DEBUG_SPAWN)) {
+				PR_ExecuteProgram (touch->v.touch);
+				touch->v.solid = SOLID_NOT;
+				touch->v.modelindex = 0;
+				ap_save_itemcount (loc_hash, 0);
+				touch->v.netname = PR_SetEngineString (str_add_numeric_state (netname, 1, 0));
+				last_trigger_change = qcvm->time;
 			}
 			//Con_DPrintf("AP_LOCATION %s Touched %s (%i) \n", PR_GetString(ent->v.classname), PR_GetString(touch->v.classname), NUM_FOR_EDICT(touch), touch->v.origin[0], touch->v.origin[1], touch->v.origin[2]);
 		}
@@ -370,7 +374,8 @@ SV_AreaTriggerEdicts ( edict_t *ent, areanode_t *node, edict_t **list, int *list
 		else if (hipnotic && !strcmp (PR_GetString (ent->v.classname), "monster_armagon") && !strncmp (PR_GetString (touch->v.classname), "path", 4)) {
 			//Con_DPrintf ("NON_AP Ent %s touching %s (%i)\n", PR_GetString (ent->v.classname), PR_GetString (touch->v.classname), NUM_FOR_EDICT (touch));
 		}
-		else PR_ExecuteProgram (touch->v.touch);
+		else 
+			PR_ExecuteProgram (touch->v.touch);
 		list[*listcount] = touch;
 		(*listcount)++;
 	}

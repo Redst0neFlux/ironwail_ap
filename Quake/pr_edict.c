@@ -1463,12 +1463,12 @@ qboolean ED_HasLinks (const edict_t* ent) {
 	// (either entity field references or target/targetname matches)
 	const char* focus_target = PR_GetString (ent->v.target);
 	const char* focus_targetname = PR_GetString (ent->v.targetname);
-		
+	
 	for (i = 1, ed = NEXT_EDICT (qcvm->edicts); i < qcvm->num_edicts; i++, ed = NEXT_EDICT (ed))
 	{
 		if (ed == sv_player || ed->free || ed == ent)
 			continue;
-
+		
 		// Check for entity field references (other than .chain)
 		for (j = 0; j < qcvm->numentityfields; j++)
 		{
@@ -1479,6 +1479,36 @@ qboolean ED_HasLinks (const edict_t* ent) {
 				return 1;
 		}
 	}
+	
+	if (*focus_target || *focus_targetname)
+		return 1;
+
+	return 0;
+}
+
+/*
+================
+ED_HasTargets
+================
+*/
+qboolean ED_HasTargets (const edict_t* ent) {
+	edict_t* ed = NULL;
+	int i = 0;
+	int j = 0;
+
+	for (i = 0; i < qcvm->numentityfields; i++)
+	{
+		eval_t* val = (eval_t*)((char*)&ent->v + qcvm->entityfieldofs[i]);
+		if (qcvm->entityfieldofs[i] == offsetof (entvars_t, chain) || !val->edict)
+			continue;
+		edict_t* ed = PROG_TO_EDICT (val->edict);
+		if (ed == ent || ed->free || ed == sv_player)
+			continue;
+		return 1;
+	}
+
+	const char* focus_target = PR_GetString (ent->v.target);
+	const char* focus_targetname = PR_GetString (ent->v.targetname);
 
 	if (*focus_target || *focus_targetname)
 		return 1;
@@ -1612,7 +1642,10 @@ void ED_LoadFromFile (const char *data)
 			else 
 			{
 				// Make monsters etc. adhere to skill level 
-				if (!Q_strncmp (classname, "func_", 5) || !Q_strncmp (classname, "monster_", 8)  || !Q_strncmp (classname, "trap_", 5) || !Q_strncmp (classname, "path_", 5)) {
+				if (!Q_strncmp (classname, "monster_", 8)) {
+					ED_Free (ent);
+				}
+				else if (!Q_strncmp (classname, "func_", 5) ||  !Q_strncmp (classname, "trap_", 5) || !Q_strncmp (classname, "path_", 5)) {
 					ap_printfd ("Skill level mismatch spawn removed %s (%i) %f\n", PR_GetString (ent->v.classname), NUM_FOR_EDICT (ent), ent->v.spawnflags);
 					remove_after[remove_array_index] = ent;
 					remove_array_index++;
@@ -1650,8 +1683,6 @@ void ED_LoadFromFile (const char *data)
 
 			// [ap] offset edict origin for .bsp models
 			// TODO: Might need some tweaking
-			// 
-			// Overwrite for timemachine in rogue
 			
 			if (!strcmp (PR_GetString (ent->v.classname), "item_shells") || !strcmp (PR_GetString (ent->v.classname), "item_spikes")
 				|| !strcmp (PR_GetString (ent->v.classname), "item_rockets") || !strcmp (PR_GetString (ent->v.classname), "item_cells")
@@ -1664,39 +1695,15 @@ void ED_LoadFromFile (const char *data)
 			int replace_blank = 0;
 			if(AP_DEBUG_SPAWN) do_replace = 1;
 			if (do_replace == 0) {
-				// We potentially need to not replace edicts that are linked to important level triggers
-				if (ap_is_edict_collected (loc_hash, "items")) {
-					replace_blank = ED_HasLinks (ent);
-				}
-				if (replace_blank)
-					func = ED_FindFunction ("item_ap_white");
-				else {
-					ap_printfd ("Freeing edict (not present in apworld): %s (%i)\n", PR_GetString (ent->v.classname), NUM_FOR_EDICT (ent));
-					func = ED_FindFunction (classname);
-					remove_after[remove_array_index] = ent;
-					remove_array_index++;
-				}
+				ap_printfd ("Freeing edict (not present in apworld): %s (%i)\n", PR_GetString (ent->v.classname), NUM_FOR_EDICT (ent));
+				func = ED_FindFunction ("item_ap");
+				remove_after[remove_array_index] = ent;
+				remove_array_index++;
 			}
 			else if (do_replace == 2) 
 				func = ED_FindFunction ("item_ap_prog");
 			else 
 				func = ED_FindFunction ("item_ap");
-
-			// Make sure to free already collected edicts
-			if (ap_is_edict_collected (loc_hash, "items")) {
-				// We potentially need to not replace edicts that are linked to important level triggers
-				if (ap_is_edict_collected (loc_hash, "items")) {
-					replace_blank = ED_HasLinks (ent);
-				}
-				if (replace_blank)
-					func = ED_FindFunction ("item_ap_white");
-				else {
-					//func = ED_FindFunction ("item_ap");
-					ap_printfd ("Marking collected edict %s (%i)\n", PR_GetString (ent->v.classname), ap_item_count);
-					remove_after[remove_array_index] = ent;
-					remove_array_index++;
-				}
-			}
 		}
 		else if (!strcmp (PR_GetString (ent->v.classname), "trigger_secret"))
 		{
@@ -1728,9 +1735,8 @@ void ED_LoadFromFile (const char *data)
 		// [ap] check this data after spawn
 		if (!strcmp (PR_GetString (ent->v.classname), "trigger_secret")) {
 			ED_Print_JSON (ent, ap_item_count);
-			// Make sure to free already collected edicts
 			uint64_t loc_hash = generate_hash (ent->v.absmax[0], ent->v.absmax[1], ent->v.absmax[2], PR_GetString (ent->v.classname));
-			// Free unused secrets
+			// Free collected secrets
 			if (!AP_DEBUG_SPAWN && (ap_is_edict_collected (loc_hash, "secrets") || ap_replace_edict (loc_hash, "secrets") == 0 )) {
 				ap_printfd ("Marking collected secret %s (%i)\n", PR_GetString (ent->v.classname), ap_item_count);
 				remove_after[remove_array_index] = ent;
@@ -1741,6 +1747,7 @@ void ED_LoadFromFile (const char *data)
 		{
 			ED_Print_JSON (ent, ap_item_count);
 			uint64_t loc_hash = generate_hash (ent->v.absmax[0], ent->v.absmax[1], ent->v.absmax[2], PR_GetString (ent->v.classname));
+			// Free collected exits
 			if (!AP_DEBUG_SPAWN && (ap_is_edict_collected (loc_hash, "exits") || ap_replace_edict (loc_hash, "exits") == 0)) {
 				remove_after[remove_array_index] = ent;
 				remove_array_index++;
@@ -1754,6 +1761,7 @@ void ED_LoadFromFile (const char *data)
 	ap_item_count += 1;
 	const char* suffix = "all_kills";
 	char* combined_string = (char*)malloc ((10 + strlen (sv.name) + 1) * sizeof (char));
+	
 	if (combined_string) {
 		strcpy (combined_string, sv.name);
 		strcat (combined_string, suffix);
@@ -1769,11 +1777,19 @@ void ED_LoadFromFile (const char *data)
 	for (int i = 0; i < remove_array_index; i++) {
 		edict_t* remove_ent = (edict_t*)remove_after[i];
 		ap_printfd ("Removing after: %s (%i) %f\n", PR_GetString (remove_ent->v.classname),NUM_FOR_EDICT (remove_ent), remove_ent->v.spawnflags);
-		if (!strncmp (PR_GetString (remove_ent->v.classname), "item_", 5) || !strncmp (PR_GetString (remove_ent->v.classname), "weapon_", 7)) {
-			remove_ent->v.model = PR_SetEngineString ("");
-			remove_ent->v.solid = SOLID_NOT;
+		/*if ((remove_ent->v.modelindex != SV_ModelIndex ("progs/ap-logo-white.mdl")) && ED_HasLinks (remove_ent)) {
+			//remove_ent->v.solid = SOLID_TRIGGER;
+			//remove_ent->v.modelindex = SV_ModelIndex ("progs/ap-logo-white.mdl");
 		}
-		else { ED_Free (remove_ent); }
+		else*/ 
+		if (!strncmp (PR_GetString (remove_ent->v.classname), "item_", 5) || !strncmp (PR_GetString (remove_ent->v.classname), "weapon_", 7)) {
+			remove_ent->v.solid = SOLID_NOT;
+			remove_ent->v.model = 0;
+			remove_ent->v.modelindex = 0;
+		}
+		else { 
+			ED_Free (remove_ent); 
+		}
 	}
 }
 
