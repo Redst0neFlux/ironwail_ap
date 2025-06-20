@@ -343,13 +343,13 @@ SV_AreaTriggerEdicts ( edict_t *ent, areanode_t *node, edict_t **list, int *list
 				//Con_SafePrintf ("Skipping touch func\n");
 			}
 			// [ap] We are touching a checked location
-			if ((fabsf (last_trigger_change - qcvm->time) > 1.0f && (is_item_checked && touch->v.modelindex != 0) || AP_DEBUG_SPAWN)) {
-				PR_ExecuteProgram (touch->v.touch);
+			if ((fabsf (last_trigger_change - qcvm->time) > 2.0f && (is_item_checked && touch->v.modelindex != 0) || AP_DEBUG_SPAWN)) {
+				/*PR_ExecuteProgram (touch->v.touch);
 				touch->v.solid = SOLID_NOT;
 				touch->v.modelindex = 0;
 				ap_save_itemcount (loc_hash, 0);
 				touch->v.netname = PR_SetEngineString (str_add_numeric_state (netname, 1, 0));
-				last_trigger_change = qcvm->time;
+				last_trigger_change = qcvm->time;*/
 			}
 			//Con_DPrintf("AP_LOCATION %s Touched %s (%i) \n", PR_GetString(ent->v.classname), PR_GetString(touch->v.classname), NUM_FOR_EDICT(touch), touch->v.origin[0], touch->v.origin[1], touch->v.origin[2]);
 		}
@@ -436,7 +436,19 @@ void SV_TouchLinks (edict_t *ent)
 		pr_global_struct->self = EDICT_TO_PROG(touch);
 		pr_global_struct->other = EDICT_TO_PROG(ent);
 		pr_global_struct->time = qcvm->time;
-		PR_ExecuteProgram (touch->v.touch);
+		// special case for player touching a respawning item
+		if (!strcmp (PR_GetString (ent->v.classname), "player") && touch->v.modelindex == SV_ModelIndex ("progs/ap-logo-white.mdl") && fabsf (last_trigger_change - qcvm->time) > 1.0f) {
+			PR_ExecuteProgram (touch->v.touch);
+			touch->v.solid = SOLID_NOT;
+			touch->v.modelindex = 0;
+			touch->v.netname = PR_SetEngineString (str_add_numeric_state (PR_GetString(touch->v.netname), 1, 0));
+			last_trigger_change = qcvm->time;
+		}
+		else if (!strcmp (PR_GetString (ent->v.classname), "player") && touch->v.modelindex != SV_ModelIndex ("progs/ap-logo-white.mdl") && (!strncmp (PR_GetString (touch->v.classname), "item_", 5) || !strncmp (PR_GetString (touch->v.classname), "weapon_", 7)) && touch->v.modelindex != 0) {
+			PR_ExecuteProgram (touch->v.touch);
+		}
+		else
+			PR_ExecuteProgram (touch->v.touch);
 
 		pr_global_struct->self = old_self;
 		pr_global_struct->other = old_other;

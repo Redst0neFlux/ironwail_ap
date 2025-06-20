@@ -2625,8 +2625,6 @@ static void COM_Game_f (void)
 				if (*paths)
 					q_strlcat(paths, ";", sizeof(paths));
 				q_strlcat(paths, p, sizeof(paths));
-				// [ap] refresh basegame on mod change
-				Q_strcpy(ap_basegame, p);
 			}
 		}
 
@@ -3221,8 +3219,6 @@ void COM_InitFilesystem (void) //johnfitz -- modified based on topaz's tutorial
 {
 	int i;
 	const char *p, *startarg;
-	// [ap]
-	ap_basegame = (char*)malloc (33 * sizeof (char));
 
 	Cvar_RegisterVariable (&registered);
 	Cvar_RegisterVariable (&cmdline);
@@ -3264,7 +3260,6 @@ void COM_InitFilesystem (void) //johnfitz -- modified based on topaz's tutorial
 	{
 		// start up with GAMENAME by default (id1)
 		COM_AddGameDirectory (GAMENAME);
-		strcpy_s (ap_basegame, strlen (ap_basegame), GAMENAME);
 	}
 
 	/* this is the end of our base searchpath:
@@ -3297,14 +3292,9 @@ void COM_InitFilesystem (void) //johnfitz -- modified based on topaz's tutorial
 			Sys_Error ("No such game directory \"%s\"", p);
 		com_modified = true;
 		if (p != NULL) {
-			// [ap] used to keep track of selected expansion
-			strcpy_s (ap_basegame, strlen (ap_basegame), p);
 			COM_AddGameDirectory (p);
 		}
 	}
-
-	if (rogue) ap_basegame = "rogue";
-	if (hipnotic) ap_basegame = "hipnotic";
 
 	COM_CheckRegistered ();
 

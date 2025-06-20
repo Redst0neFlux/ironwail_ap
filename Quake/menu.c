@@ -1230,7 +1230,7 @@ void M_Menu_Main_f (void)
 	}
 }
 
-
+qboolean set_basegame = 0;
 void M_Main_Draw (void)
 {
 	int		cursor;
@@ -1258,6 +1258,12 @@ void M_Main_Draw (void)
 	if (!m_main_mods && cursor > MAIN_MODS)
 		--cursor;
 	M_DrawQuakeCursor (54, 32 + cursor * 20);
+
+	// [ap] basegame isn't set yet
+	if (!set_basegame) {
+		Cbuf_AddText (va ("game %s\n", ap_basegame));
+		set_basegame = 1;
+	}
 }
 
 

@@ -1519,7 +1519,7 @@ static void R_ShowBoundingBoxes (void)
 			continue;
 
 		//[ap] dont show "removed" item/weapon edicts
-		if (!strcmp(PR_GetString(ed->v.model), "") && strncmp (PR_GetString (ed->v.classname), "trigger_", 8) && !AP_DEBUG)
+		if (((ed->v.modelindex == 0 && strncmp (PR_GetString (ed->v.classname), "trigger_", 8)) || (str_return_numeric_state (PR_GetString (ed->v.netname)) & 1)) && !AP_DEBUG)
 			continue;
 		else if (!strcmp (PR_GetString (ed->v.classname), "trigger_secret")) {
 			uint64_t loc_hash = generate_hash (ed->v.absmax[0], ed->v.absmax[1], ed->v.absmax[2], PR_GetString (ed->v.classname));
@@ -1568,9 +1568,6 @@ static void R_ShowBoundingBoxes (void)
 			focused = ed;
 		}
 
-		// [ap] Don't add already collected ap model edicts
-		if ( !AP_DEBUG && str_return_numeric_state (PR_GetString (ed->v.netname)) & 1 )
-			continue;
 		// Add edict to list
 		R_AddHighlightedEntity (ed, SHOWBBOX_LINK_NONE);
 	}

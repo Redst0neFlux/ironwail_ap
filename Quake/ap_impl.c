@@ -267,7 +267,7 @@ uint8_t ap_game_id = 0;
 
 // Extern AP Vars
 char* ap_current_map;
-char* ap_basegame;
+const char* ap_basegame;
 
 // JSON Funcs
 void json_print_sys (const char* key, json_t* j)
@@ -309,21 +309,9 @@ static char* ap_fix_start_mapname (const char* mapname) {
 }
 
 void ap_on_map_load(char* mapname) {
-	/*
-	if (!strcmp ("start", mapname)) {
-		size_t total_len = strlen (mapname) + 1 + strlen (ap_basegame) + 1;
-		ap_current_map = (char*)malloc (total_len * sizeof (char));
-		if (ap_current_map) {
-			strcpy (ap_current_map, mapname);
-			strcat (ap_current_map, "_");
-			strcat (ap_current_map, ap_basegame);
-		}
-	}
-	else {*/
 	size_t mapname_len = strlen (mapname) + 1;
 	ap_current_map = (char*)malloc (mapname_len * sizeof (char));
 	if (ap_current_map) strcpy (ap_current_map, mapname);
-	//}
 	g_hash_table_remove_all (ap_itemcount_map);
 }
 
@@ -1187,6 +1175,7 @@ static void ap_get_item (ap_net_id_t item_id, bool silent, bool is_new)
 		}
 	}
 	else if (!strcmp (item_type, "key") && item_for_current_level (item_info)) {
+		ap_prog_sounds += 1;
 		// apply key flag to inventory flags
 		uint64_t flags = json_integer_value (json_object_get (item_info, "flags"));
 		ap_inventory_flags |= flags;
@@ -1820,6 +1809,9 @@ static void set_settings (json_t* jobj)
 		if (!strcmp (k_settingkey, "traps_as_progressive")) {
 			ap_traps_as_progressive = (int)json_integer_value (v_settingdata);
 		}
+		if (!strcmp (k_settingkey, "basegame")) {
+			ap_basegame = strdup (json_string_value (v_settingdata));
+		}
 	}
 }
 
@@ -1977,8 +1969,6 @@ void AP_Initialize (json_t* game_config, ap_connection_settings_t connection)
 	ap_inventory_flags = 0;
 	ap_inventory2_flags = 0;
 
-	if ((int)rogue) 
-		ap_ammo_max = 7;
 
 	init_location_table (json_object_get (game_config, "locations"));
 	init_item_table (json_object_get (game_config, "items"));
@@ -2015,6 +2005,7 @@ void AP_Initialize (json_t* game_config, ap_connection_settings_t connection)
 	AP_RegisterSlotDataRawCallback ("settings", &set_settings);
 	AP_RegisterSlotDataRawCallback ("levels", &set_used_levels);
 	AP_RegisterSlotDataRawCallback ("checksum", &set_id_checksums);
+
 	AP_Start ();
 
 	if (sync_wait_for_data (timeout))
@@ -2039,6 +2030,9 @@ void AP_Initialize (json_t* game_config, ap_connection_settings_t connection)
 	while (!ap_received_scout_info) {}
 
 	ap_printf ("Server info received.\n");
+
+	if (!strcmp (ap_basegame, "rogue"))
+		ap_ammo_max = 7;
 
 	ap_global_state = AP_INITIALIZED;
 }
