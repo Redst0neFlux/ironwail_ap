@@ -1641,7 +1641,7 @@ static void R_ShowBoundingBoxes (void)
 	}
 
 	// Draw all the matching edicts
-	// [ap] check if hint highlight
+	// [ap] check if hint highlight or missing loc
 
 	for (i = 0; i < (int) VEC_SIZE (bbox_edicts); i++)
 	{
@@ -1694,6 +1694,11 @@ static void R_ShowBoundingBoxes (void)
 				loc_hash = generate_hash (ed->baseline.origin[0], ed->baseline.origin[1], ed->baseline.origin[2], PR_GetString (ed->v.classname));
 			
 			if ( ap_highlighthinted.value && (AP_IsLocHinted (loc_hash, "items"))) color = 0x7F00FF00;
+
+			char* ap_loc_name = edict_get_loc_name (loc_hash, "items");
+			if (AP_DEBUG && !AP_DEBUG_SPAWN && !strcmp (ap_loc_name, "") && (!strncmp (PR_GetString (ed->v.classname), "item_", 5) || !strncmp (PR_GetString (ed->v.classname), "weapon_", 7))) 
+				color = 0x7F00FF00;
+				//Con_SafePrintf ("Missing location %s\n", PR_GetString (ed->v.classname));
 			
 			if ( AP_DEBUG && str_return_numeric_state (PR_GetString (ed->v.netname)) & 2) color = 0x7F5c5c00;
 			//box entity

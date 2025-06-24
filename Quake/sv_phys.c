@@ -1143,7 +1143,7 @@ void SV_Physics_Client (edict_t	*ent, int num)
 		// give inventory items
 		sv_player->v.items = (int)sv_player->v.items | ap_inventory_flags;
 
-		if (!strcmp (ap_basegame, "rogue")) {
+		if (!AP_DEBUG_SPAWN && !strcmp (ap_basegame, "rogue")) {
 			val = GetEdictFieldValueByName (sv_player, "items2");
 			val->_float = (int)val->_float | ap_inventory2_flags;
 		}
@@ -1162,7 +1162,7 @@ void SV_Physics_Client (edict_t	*ent, int num)
 		val = GetEdictFieldValueByName (sv_player, "ap_max_cells");
 		val->_float = fmin (ap_max_ammo_arr[3], ap_max_ammo_vanilla_arr[3]);
 
-		if (!strcmp (ap_basegame, "rogue")) {
+		if (!AP_DEBUG_SPAWN && !strcmp (ap_basegame, "rogue")) {
 			val = GetEdictFieldValueByName (sv_player, "ap_max_lavanails");
 			val->_float = fmin (ap_max_ammo_arr[4], ap_max_ammo_vanilla_arr[4]);
 
@@ -1183,7 +1183,7 @@ void SV_Physics_Client (edict_t	*ent, int num)
 			val->_float = ap_give_ammo_arr[2];
 			val = GetEdictFieldValueByName (sv_player, "ap_cells");
 			val->_float = ap_give_ammo_arr[3];
-			if (!strcmp (ap_basegame, "rogue")) {
+			if (!AP_DEBUG_SPAWN && !strcmp (ap_basegame, "rogue")) {
 				val = GetEdictFieldValueByName (sv_player, "ap_lavanails");
 				val->_float = ap_give_ammo_arr[4];
 				val = GetEdictFieldValueByName (sv_player, "ap_multirockets");
@@ -1341,9 +1341,9 @@ void SV_Physics_Client (edict_t	*ent, int num)
 			uint64_t loc_hash = generate_hash (999, 999, 999, combined_string);
 			AP_CheckLocation (loc_hash, "items");
 		}
-		else if (!strcmp (ap_basegame, "hipnotic") && CL_InCutscene () && !strcmp (sv.name, "hipend"))
+		else if (!AP_DEBUG_SPAWN && !strcmp (ap_basegame, "hipnotic") && CL_InCutscene () && !strcmp (sv.name, "hipend"))
 			AP_SendExit (sv.name);
-		else if (!strcmp (ap_basegame, "rogue") && cl.intermission && !strcmp (sv.name, "r2m8"))
+		else if (!AP_DEBUG_SPAWN && !strcmp (ap_basegame, "rogue") && cl.intermission && !strcmp (sv.name, "r2m8"))
 			AP_SendExit (sv.name);
 
 		// play progressive sound cue if cvar is set

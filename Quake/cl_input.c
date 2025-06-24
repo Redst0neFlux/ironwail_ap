@@ -604,7 +604,7 @@ void CL_InitInput (void)
 	Cmd_AddCommand ("automap", IN_Automap);
 	Cmd_AddCommand ("ap_giveallkills", IN_GiveAllKills);
 	if (AP_DEBUG) Cmd_AddCommand ("clear_edictlist", IN_ClearEdictList);
-	if (AP_DEBUG_SPAWN) {
+	if (AP_DEBUG_SPAWN || AP_DEBUG) {
 		Cmd_AddCommand ("ap_debug_dive", IN_DebugDive);
 		Cmd_AddCommand ("ap_debug_jump", IN_DebugJump);
 		Cmd_AddCommand ("ap_debug_run", IN_DebugRun);

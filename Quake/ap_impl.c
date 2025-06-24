@@ -1591,42 +1591,42 @@ void ap_init_connection ()
 
 int ap_can_dive()
 {
-	if (AP_DEBUG_SPAWN && ap_debug_dive) return 1;
+	if ((AP_DEBUG || AP_DEBUG_SPAWN) && ap_debug_dive) return 1;
 	if (ght_lookup_str (ap_ability_unlocks, "dive")) return 1;
     return 0;
 }
 
 int ap_can_jump()
 {
-	if (AP_DEBUG_SPAWN && ap_debug_jump) return 1;
+	if ((AP_DEBUG || AP_DEBUG_SPAWN) && ap_debug_jump) return 1;
 	if (ght_lookup_str (ap_ability_unlocks, "jump")) return 1;
 	return 0;
 }
 
 int ap_can_run ()
 {
-	if (AP_DEBUG_SPAWN && ap_debug_run) return 1;
+	if ((AP_DEBUG || AP_DEBUG_SPAWN) && ap_debug_run) return 1;
 	if (ght_lookup_str (ap_ability_unlocks, "run")) return 1;
 	return 0;
 }
 
 int ap_can_button()
 {
-	if (AP_DEBUG_SPAWN && ap_debug_button) return 1;
+	if ((AP_DEBUG || AP_DEBUG_SPAWN) && ap_debug_button) return 1;
 	if (ght_lookup_str (ap_ability_unlocks, "button")) return 1;
 	return 0;
 }
 
 int ap_can_door()
 {
-	if (AP_DEBUG_SPAWN && ap_debug_door) return 1;
+	if ((AP_DEBUG || AP_DEBUG_SPAWN) && ap_debug_door) return 1;
 	if (ght_lookup_str (ap_ability_unlocks, "door")) return 1;
 	return 0;
 }
 
 int ap_can_automap (char* mapname)
 {	
-	if (AP_DEBUG_SPAWN) return 1;
+	if ((AP_DEBUG || AP_DEBUG_SPAWN)) return 1;
 	char* mapname_fixed = ap_fix_start_mapname (mapname);
 	if (ght_lookup_str (ap_automap_unlocks, mapname_fixed)) return 1;
 	return 0;
@@ -1643,35 +1643,35 @@ uint64_t* ap_get_key_flags (const char* mapname)
 
 int ap_can_grenadesaver ()
 {
-	if (AP_DEBUG_SPAWN && ap_debug_grenadesaver) return AP_GRENADESAVER;
+	if ((AP_DEBUG || AP_DEBUG_SPAWN) && ap_debug_grenadesaver) return AP_GRENADESAVER;
 	if (ght_lookup_str (ap_ability_unlocks, "grenadedmgremover")) return AP_GRENADESAVER;
 	return 0;
 }
 
 int ap_can_rocketsaver ()
 {
-	if (AP_DEBUG_SPAWN && ap_debug_rocketsaver) return AP_ROCKETSAVER;
+	if ((AP_DEBUG || AP_DEBUG_SPAWN) && ap_debug_rocketsaver) return AP_ROCKETSAVER;
 	if (ght_lookup_str (ap_ability_unlocks, "rocketdmgremover")) return AP_ROCKETSAVER;
 	return 0;
 }
 
 int ap_can_rocketjump ()
 {
-	if (AP_DEBUG_SPAWN && ap_debug_rocketjump) return AP_ROCKETJUMP;
+	if ((AP_DEBUG || AP_DEBUG_SPAWN) && ap_debug_rocketjump) return AP_ROCKETJUMP;
 	if (ght_lookup_str (ap_ability_unlocks, "rocketjump")) return AP_ROCKETJUMP;
 	return 0;
 }
 
 int ap_can_grenadejump ()
 {
-	if (AP_DEBUG_SPAWN && ap_debug_grenadejump) return AP_GRENADEJUMP;
+	if ((AP_DEBUG || AP_DEBUG_SPAWN) && ap_debug_grenadejump) return AP_GRENADEJUMP;
 	if (ght_lookup_str (ap_ability_unlocks, "grenadejump")) return AP_GRENADEJUMP;
 	return 0;
 }
 
 int ap_can_shootswitch ()
 {
-	if (AP_DEBUG_SPAWN && ap_debug_shootswitch) return AP_SHOOTSWITCH;
+	if ((AP_DEBUG || AP_DEBUG_SPAWN) && ap_debug_shootswitch) return AP_SHOOTSWITCH;
 	if (ght_lookup_str (ap_ability_unlocks, "shootswitch")) return AP_SHOOTSWITCH;
 	return 0;
 }

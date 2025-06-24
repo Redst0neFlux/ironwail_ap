@@ -1626,18 +1626,19 @@ void ED_LoadFromFile (const char *data)
 			if ( ((int)ent->v.spawnflags & (SPAWNFLAG_NOT_EASY | SPAWNFLAG_NOT_MEDIUM | SPAWNFLAG_NOT_HARD)) == (SPAWNFLAG_NOT_EASY | SPAWNFLAG_NOT_MEDIUM | SPAWNFLAG_NOT_HARD))
 			{
 				if (!Q_strncmp (classname, "func_", 5) || !Q_strcmp (classname, "info_teleport_destination") || !Q_strncmp (classname, "trigger_", 8) || !Q_strncmp (classname, "path_", 5)) {
-					ap_printfd ("Freeing DM Spawn: %s (%i)\n", PR_GetString (ent->v.classname), NUM_FOR_EDICT (ent));
+					//ap_printfd ("Freeing DM Spawn: %s (%i)\n", PR_GetString (ent->v.classname), NUM_FOR_EDICT (ent));
 					remove_after[remove_array_index] = ent;
 					remove_array_index++;
 					continue;
 				}
-				else ap_printfd ("DM Spawn: %s (%i): %i\n", PR_GetString (ent->v.classname), NUM_FOR_EDICT (ent), (int)ent->v.spawnflags);
+				//else 
+					//ap_printfd ("DM Spawn: %s (%i): %i\n", PR_GetString (ent->v.classname), NUM_FOR_EDICT (ent), (int)ent->v.spawnflags);
 			}
 			// Always continue with items/weapons even if the skill requirement is not met
 			else if ((!strncmp (PR_GetString (ent->v.classname), "item_", 5) || !strncmp (PR_GetString (ent->v.classname), "weapon_", 7)))
 			{
-				ap_printfd ("Spawned consistent: %s (%i): %i\n", PR_GetString (ent->v.classname), NUM_FOR_EDICT(ent), (int)ent->v.spawnflags);
-				ap_printfd ("Not Easy:%i Not Medium:%i Not Hard:%i\n", ((int)ent->v.spawnflags & SPAWNFLAG_NOT_EASY), ((int)ent->v.spawnflags & SPAWNFLAG_NOT_MEDIUM), ((int)ent->v.spawnflags & SPAWNFLAG_NOT_HARD));
+				//ap_printfd ("Spawned consistent: %s (%i): %i\n", PR_GetString (ent->v.classname), NUM_FOR_EDICT(ent), (int)ent->v.spawnflags);
+				//ap_printfd ("Not Easy:%i Not Medium:%i Not Hard:%i\n", ((int)ent->v.spawnflags & SPAWNFLAG_NOT_EASY), ((int)ent->v.spawnflags & SPAWNFLAG_NOT_MEDIUM), ((int)ent->v.spawnflags & SPAWNFLAG_NOT_HARD));
 			}
 			else 
 			{
@@ -1646,12 +1647,13 @@ void ED_LoadFromFile (const char *data)
 					ED_Free (ent);
 				}
 				else if (!Q_strncmp (classname, "func_", 5) ||  !Q_strncmp (classname, "trap_", 5) || !Q_strncmp (classname, "path_", 5)) {
-					ap_printfd ("Skill level mismatch spawn removed %s (%i) %f\n", PR_GetString (ent->v.classname), NUM_FOR_EDICT (ent), ent->v.spawnflags);
+					//ap_printfd ("Skill level mismatch spawn removed %s (%i) %f\n", PR_GetString (ent->v.classname), NUM_FOR_EDICT (ent), ent->v.spawnflags);
 					remove_after[remove_array_index] = ent;
 					remove_array_index++;
 					continue;
 				}
-				else ap_printfd ("Skill level mismatch spawn enforced %s (%i)\n", PR_GetString (ent->v.classname), NUM_FOR_EDICT (ent));
+				//else 
+					//ap_printfd ("Skill level mismatch spawn enforced %s (%i)\n", PR_GetString (ent->v.classname), NUM_FOR_EDICT (ent));
 			}
 		}
 
@@ -1695,7 +1697,8 @@ void ED_LoadFromFile (const char *data)
 			int replace_blank = 0;
 			if(AP_DEBUG_SPAWN) do_replace = 1;
 			if (do_replace == 0) {
-				ap_printfd ("Freeing edict (not present in apworld): %s (%i)\n", PR_GetString (ent->v.classname), NUM_FOR_EDICT (ent));
+				//ap_printfd ("Freeing edict (not present in apworld): %s (%i)\n", PR_GetString (ent->v.classname), NUM_FOR_EDICT (ent));
+				ap_printfd ("Freeing edict (not present in apworld): %zu %s [%f %f %f]\n", loc_hash, PR_GetString (ent->v.classname), ent->v.origin[0], ent->v.origin[1], ent->v.origin[2]);
 				func = ED_FindFunction ("item_ap");
 				remove_after[remove_array_index] = ent;
 				remove_array_index++;

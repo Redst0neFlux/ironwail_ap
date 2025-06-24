@@ -343,11 +343,13 @@ SV_AreaTriggerEdicts ( edict_t *ent, areanode_t *node, edict_t **list, int *list
 				//Con_SafePrintf ("Skipping touch func\n");
 			}
 			// [ap] We are touching a checked location
-			if ((fabsf (last_trigger_change - qcvm->time) > 2.0f && (is_item_checked && touch->v.modelindex != 0) || AP_DEBUG_SPAWN)) {
+			//if ((fabsf (last_trigger_change - qcvm->time) > 2.0f && (is_item_checked && touch->v.modelindex != 0) || AP_DEBUG_SPAWN)) {
+			if ( AP_DEBUG_SPAWN) {
+				PR_ExecuteProgram (touch->v.touch);
+				ED_Free (touch);
 				/*PR_ExecuteProgram (touch->v.touch);
 				touch->v.solid = SOLID_NOT;
 				touch->v.modelindex = 0;
-				ap_save_itemcount (loc_hash, 0);
 				touch->v.netname = PR_SetEngineString (str_add_numeric_state (netname, 1, 0));
 				last_trigger_change = qcvm->time;*/
 			}
