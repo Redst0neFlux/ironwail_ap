@@ -6,7 +6,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include <ap_qengine.h>
 #include <rapidhash.h>
 
 // Func Defs // AP Impl Funcs
@@ -1215,7 +1214,7 @@ static void ap_get_item (ap_net_id_t item_id, bool silent, bool is_new)
 		// grab ammonum and fill give_arr
 		int ammonum = (int)json_integer_value (json_object_get (item_info, "ammonum"));
 		int ammo = (int)json_integer_value (json_object_get (item_info, "ammo"));
-		if ((int)rogue) {
+		if (!strcmp (ap_basegame, "rogue")) {
 			json_t* it2_obj = json_object_get (item_info, "it2_flags");
 			if (it2_obj) {
 				uint64_t it2flags = json_integer_value (it2_obj);

@@ -1605,7 +1605,7 @@ void SCR_DrawEdictInfo (void)
 					char* sub_str = extract_bracketed_part (ap_loc_name);
 					set_clipboard_text (sub_str);
 				}
-				if (AP_DEBUG && !strcmp (ap_loc_name, "") && (!strncmp (PR_GetString (ed->v.classname), "item_", 5) || !strncmp (PR_GetString (ed->v.classname), "weapon_", 7)))
+				if (AP_DEBUG && ap_loc_name &&!strcmp (ap_loc_name, "") && (!strncmp (PR_GetString (ed->v.classname), "item_", 5) || !strncmp (PR_GetString (ed->v.classname), "weapon_", 7)))
 					Con_SafePrintf ("%s [%f %f %f]\n", PR_GetString (ed->v.classname), ed->v.origin[0], ed->v.origin[1], ed->v.origin[2]);
 				VEC_CLEAR (scr_edictoverlaystrings);
 				MultiString_Append (&scr_edictoverlaystrings, "");

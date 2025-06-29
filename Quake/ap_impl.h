@@ -15,6 +15,10 @@
 // Dump entity data to textfile on level load
 #define AP_DUMP_EDICT 0
 
+#define AP_KEEP_SPAWNS 0
+
+#define AP_EDICT_RESPAWN_TIMER 3.0f
+
 /*
 #ifdef _DEBUG
 #define AP_DEBUG 1

@@ -296,10 +296,6 @@ SV_AreaTriggerEdicts ( edict_t *ent, areanode_t *node, edict_t **list, int *list
 		touch = EDICT_FROM_AREA(l);
 		if (touch == ent)
 			continue;
-		// TODO: Is this needed?
-		// [ap] check for free
-		if (touch->free)
-			continue;
 		if (!touch->v.touch || touch->v.solid != SOLID_TRIGGER)
 			continue;
 		if (ent->v.absmin[0] > touch->v.absmax[0]
@@ -314,7 +310,7 @@ SV_AreaTriggerEdicts ( edict_t *ent, areanode_t *node, edict_t **list, int *list
 			return; // should never happen
 
 		// [ap] hook into player func when items/weapons are touched
-		
+
 		if (!strncmp (PR_GetString (ent->v.classname), "player", 6) && (!strncmp (PR_GetString (touch->v.classname), "item_", 5) || !strncmp (PR_GetString (touch->v.classname), "weapon_", 7)))
 		{
 			char* classname = GetClassname_APFormat (touch);
@@ -326,32 +322,31 @@ SV_AreaTriggerEdicts ( edict_t *ent, areanode_t *node, edict_t **list, int *list
 			{
 				loc_hash = generate_hash (touch->baseline.origin[0] - 16, touch->baseline.origin[1] - 16, touch->baseline.origin[2], PR_GetString (touch->v.classname));
 			}
-			else 
+			else
 				loc_hash = generate_hash (touch->baseline.origin[0], touch->baseline.origin[1], touch->baseline.origin[2], PR_GetString (touch->v.classname));
-			
+
 			const char* netname = PR_GetString (touch->v.netname);
 			qboolean is_item_checked = (str_return_numeric_state (netname) & 1);
-			if (!AP_DEBUG_SPAWN && !is_item_checked) {
+			if (!is_item_checked) {
 				//item wasnt checked yet
-				AP_CheckLocation (loc_hash, "items");
-				touch->v.netname = PR_SetEngineString (str_add_numeric_state (netname, 1, 0));
+				if (!AP_DEBUG_SPAWN) AP_CheckLocation (loc_hash, "items");
+				else add_touched_edict (loc_hash, "items");
+				if (!strncmp ("AP", netname, 2)) {
+					touch->v.netname = PR_SetEngineString (str_add_numeric_state (netname, 1, 0));
+					last_trigger_change = qcvm->time;
+					touch->v.modelindex = 0;
+				}
 			}
-			else add_touched_edict (loc_hash, "items");
 			// we are touching an invisible location, dont interact
-			if (is_item_checked && touch->v.modelindex == 0)
+			else if (is_item_checked && touch->v.modelindex == 0)
 			{
 				//Con_SafePrintf ("Skipping touch func\n");
 			}
-			// [ap] We are touching a checked location
-			//if ((fabsf (last_trigger_change - qcvm->time) > 2.0f && (is_item_checked && touch->v.modelindex != 0) || AP_DEBUG_SPAWN)) {
-			if ( AP_DEBUG_SPAWN) {
-				PR_ExecuteProgram (touch->v.touch);
-				ED_Free (touch);
-				/*PR_ExecuteProgram (touch->v.touch);
-				touch->v.solid = SOLID_NOT;
+			// [ap] We are touching a checked location that respawned, disable on touch
+			else if (is_item_checked && touch->v.modelindex == SV_ModelIndex ("progs/ap-logo-white.mdl")) {
 				touch->v.modelindex = 0;
-				touch->v.netname = PR_SetEngineString (str_add_numeric_state (netname, 1, 0));
-				last_trigger_change = qcvm->time;*/
+				touch->v.solid = 0;
+				last_trigger_change = qcvm->time;
 			}
 			//Con_DPrintf("AP_LOCATION %s Touched %s (%i) \n", PR_GetString(ent->v.classname), PR_GetString(touch->v.classname), NUM_FOR_EDICT(touch), touch->v.origin[0], touch->v.origin[1], touch->v.origin[2]);
 		}
@@ -362,7 +357,7 @@ SV_AreaTriggerEdicts ( edict_t *ent, areanode_t *node, edict_t **list, int *list
 			if (!AP_DEBUG_SPAWN) AP_CheckLocation (loc_hash, "exits");
 			else add_touched_edict (loc_hash, "exits");
 		}
-		else if (!strncmp (PR_GetString (ent->v.classname), "player", 6) && !strncmp (PR_GetString (touch->v.classname), "trigger", 7))	{
+		else if (!strncmp (PR_GetString (ent->v.classname), "player", 6) && !strncmp (PR_GetString (touch->v.classname), "trigger", 7)) {
 			//Con_DPrintf ("NON_AP Trigger %s Touched %s (%i) at %f %f %f\n", PR_GetString (ent->v.classname), PR_GetString (touch->v.classname), NUM_FOR_EDICT (touch), touch->v.origin[0], touch->v.origin[1], touch->v.origin[2]);
 		}
 		else if (!strncmp (PR_GetString (ent->v.classname), "player", 6)) {
@@ -376,8 +371,7 @@ SV_AreaTriggerEdicts ( edict_t *ent, areanode_t *node, edict_t **list, int *list
 		else if (hipnotic && !strcmp (PR_GetString (ent->v.classname), "monster_armagon") && !strncmp (PR_GetString (touch->v.classname), "path", 4)) {
 			//Con_DPrintf ("NON_AP Ent %s touching %s (%i)\n", PR_GetString (ent->v.classname), PR_GetString (touch->v.classname), NUM_FOR_EDICT (touch));
 		}
-		else 
-			PR_ExecuteProgram (touch->v.touch);
+
 		list[*listcount] = touch;
 		(*listcount)++;
 	}
@@ -409,7 +403,7 @@ void SV_TouchLinks (edict_t *ent)
 	int		old_self, old_other;
 	int		i, listcount;
 	int		mark;
-	
+
 	mark = Hunk_LowMark ();
 	list = (edict_t **) Hunk_AllocNoFill (qcvm->num_edicts*sizeof(edict_t *));
 
@@ -438,19 +432,7 @@ void SV_TouchLinks (edict_t *ent)
 		pr_global_struct->self = EDICT_TO_PROG(touch);
 		pr_global_struct->other = EDICT_TO_PROG(ent);
 		pr_global_struct->time = qcvm->time;
-		// special case for player touching a respawning item
-		if (!strcmp (PR_GetString (ent->v.classname), "player") && touch->v.modelindex == SV_ModelIndex ("progs/ap-logo-white.mdl") && fabsf (last_trigger_change - qcvm->time) > 1.0f) {
-			PR_ExecuteProgram (touch->v.touch);
-			touch->v.solid = SOLID_NOT;
-			touch->v.modelindex = 0;
-			touch->v.netname = PR_SetEngineString (str_add_numeric_state (PR_GetString(touch->v.netname), 1, 0));
-			last_trigger_change = qcvm->time;
-		}
-		else if (!strcmp (PR_GetString (ent->v.classname), "player") && touch->v.modelindex != SV_ModelIndex ("progs/ap-logo-white.mdl") && (!strncmp (PR_GetString (touch->v.classname), "item_", 5) || !strncmp (PR_GetString (touch->v.classname), "weapon_", 7)) && touch->v.modelindex != 0) {
-			PR_ExecuteProgram (touch->v.touch);
-		}
-		else
-			PR_ExecuteProgram (touch->v.touch);
+		PR_ExecuteProgram (touch->v.touch);
 
 		pr_global_struct->self = old_self;
 		pr_global_struct->other = old_other;

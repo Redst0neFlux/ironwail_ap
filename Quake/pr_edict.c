@@ -1516,6 +1516,16 @@ qboolean ED_HasTargets (const edict_t* ent) {
 	return 0;
 }
 
+uint64_t force_vanilla_spawn_arr[1] = { 15823753587973952172 };
+qboolean force_vanilla_spawn (const uint64_t arr[], uint64_t value) {
+	size_t array_size = sizeof (arr) / sizeof (arr[0]);
+	for (size_t i = 0; i < array_size; ++i) {
+		if (arr[i] == value) {
+			return true;
+		}
+	}
+	return false;
+}
 /*
 ================
 ED_LoadFromFile
@@ -1672,9 +1682,11 @@ void ED_LoadFromFile (const char *data)
 	// look for the spawn function
 		
 		// [ap] Overwrite spawn function of items and weapons with ap models
-
+		
 		// exception for the time machine on the final map of rogue
-		if (rogue && (!strcmp (PR_GetString (ent->v.classname), "item_time_machine") | !strcmp (PR_GetString (ent->v.classname), "item_time_core")))
+		if (AP_KEEP_SPAWNS) 
+			func = ED_FindFunction (classname);
+		else if (rogue && (!strcmp (PR_GetString (ent->v.classname), "item_time_machine") | !strcmp (PR_GetString (ent->v.classname), "item_time_core")))
 			func = ED_FindFunction (classname);
 		else if (!strncmp (PR_GetString (ent->v.classname), "item_", 5) || !strncmp (PR_GetString (ent->v.classname), "weapon_", 7))
 		{
@@ -1683,20 +1695,34 @@ void ED_LoadFromFile (const char *data)
 			uint64_t loc_hash = 0;
 			loc_hash = generate_hash (ent->v.origin[0], ent->v.origin[1], ent->v.origin[2], PR_GetString (ent->v.classname));
 
+			// check if we force-overwrite a spawn
+			qboolean force_spawn = force_vanilla_spawn (force_vanilla_spawn_arr, loc_hash);
+
+
 			// [ap] offset edict origin for .bsp models
 			// TODO: Might need some tweaking
-			
-			if (!strcmp (PR_GetString (ent->v.classname), "item_shells") || !strcmp (PR_GetString (ent->v.classname), "item_spikes")
+			if (force_spawn) {
+				// TODO: This might break in other cases
+				ent->v.origin[2] -= 6;
+			}
+			else if (!force_spawn && !strcmp (PR_GetString (ent->v.classname), "item_shells") || !strcmp (PR_GetString (ent->v.classname), "item_spikes")
 				|| !strcmp (PR_GetString (ent->v.classname), "item_rockets") || !strcmp (PR_GetString (ent->v.classname), "item_cells")
 				|| !strcmp (PR_GetString (ent->v.classname), "item_health"))
 			{
 				ent->v.origin[0] += 16;
 				ent->v.origin[1] += 16;
 			}
+
 			int do_replace = ap_replace_edict (loc_hash, "items");
 			int replace_blank = 0;
-			if(AP_DEBUG_SPAWN) do_replace = 1;
-			if (do_replace == 0) {
+			
+			if (AP_DEBUG_SPAWN) 
+				do_replace = 1;
+			// First check for forced spawns
+			if (force_spawn) {
+				func = ED_FindFunction (classname);
+			}
+			else if (do_replace == 0) {
 				//ap_printfd ("Freeing edict (not present in apworld): %s (%i)\n", PR_GetString (ent->v.classname), NUM_FOR_EDICT (ent));
 				ap_printfd ("Freeing edict (not present in apworld): %zu %s [%f %f %f]\n", loc_hash, PR_GetString (ent->v.classname), ent->v.origin[0], ent->v.origin[1], ent->v.origin[2]);
 				func = ED_FindFunction ("item_ap");

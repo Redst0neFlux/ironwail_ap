@@ -230,7 +230,6 @@ copy "$(SolutionDir)..\zlib\$(PlatformShortName)\*.dll" "$(TargetDir)"</Command>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="..\..\Quake\ap_qengine.c" />
     <ClCompile Include="..\..\Quake\bgmusic.c" />
     <ClCompile Include="..\..\Quake\cd_null.c" />
     <ClCompile Include="..\..\Quake\cfgfile.c" />
@@ -364,7 +363,6 @@ copy "$(SolutionDir)..\zlib\$(PlatformShortName)\*.dll" "$(TargetDir)"</Command>
     <ClInclude Include="..\..\Quake\anorms.h" />
     <ClInclude Include="..\..\Quake\anorm_dots.h" />
     <ClInclude Include="..\..\Quake\ap_impl.h" />
-    <ClInclude Include="..\..\Quake\ap_qengine.h" />
     <ClInclude Include="..\..\Quake\arch_def.h" />
     <ClInclude Include="..\..\Quake\bgmusic.h" />
     <ClInclude Include="..\..\Quake\bspfile.h" />

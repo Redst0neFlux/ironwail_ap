@@ -2684,34 +2684,6 @@ static void Host_Loadgame_f (void)
 			}
 			data = ED_ParseEdict (data, ent);
 
-			// remove from loadgame data if collected
-			// TODO: Is this deletion method stable? baseline.origin is 0,0,0 in case of previous free
-			if ((!strncmp (PR_GetString (ent->v.classname), "item_", 5) || !strncmp (PR_GetString (ent->v.classname), "weapon_", 7))) 
-			{
-				uint64_t loc_hash;
-				if (!strcmp (PR_GetString (ent->v.classname), "item_shells") || !strcmp (PR_GetString (ent->v.classname), "item_spikes")
-					|| !strcmp (PR_GetString (ent->v.classname), "item_rockets") || !strcmp (PR_GetString (ent->v.classname), "item_cells")
-					|| !strcmp (PR_GetString (ent->v.classname), "item_health"))
-				{
-					loc_hash = generate_hash (ent->baseline.origin[0] - 16, ent->baseline.origin[1] - 16, ent->baseline.origin[2], PR_GetString (ent->v.classname));
-				}
-				else
-					loc_hash = generate_hash (ent->baseline.origin[0], ent->baseline.origin[1], ent->baseline.origin[2], PR_GetString (ent->v.classname));
-			}
-			/*
-			else if ((!strcmp (PR_GetString (ent->v.classname), "trigger_secret"))) {
-				uint64_t loc_hash = generate_hash (ent->v.absmax[0], ent->v.absmax[1], ent->v.absmax[2], PR_GetString (ent->v.classname));
-				if (ap_is_edict_collected (loc_hash, "secrets")) {
-					ED_Free (ent);
-				}
-			}
-			else if ((!strcmp (PR_GetString (ent->v.classname), "trigger_changelevel"))) {
-				uint64_t loc_hash = generate_hash (ent->v.absmax[0], ent->v.absmax[1], ent->v.absmax[2], PR_GetString (ent->v.classname));
-				if (ap_is_edict_collected (loc_hash, "exits")) {
-					ED_Free (ent);
-				}
-			}*/
-
 			// link it into the bsp tree
 			if (!ent->free)
 				SV_LinkEdict (ent, false);

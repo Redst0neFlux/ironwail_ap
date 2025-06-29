@@ -126,7 +126,7 @@ int str_return_numeric_state (const char* item_string) {
 
 	size_t len = strlen (item_string);
 
-	if (len > 0) {
+	if (len >= 3 && item_string[0] == 'A' && item_string[1] == 'P') {
 		char last_char = item_string[len - 1];
 
 		if (isdigit (last_char)) {
@@ -161,14 +161,15 @@ static void SV_AdjustAPModels (void)
 			}
 			else
 				loc_hash = generate_hash (check->baseline.origin[0], check->baseline.origin[1], check->baseline.origin[2], PR_GetString (check->v.classname));
-			if (AP_IsLocChecked (loc_hash, "items") || ((str_return_numeric_state(PR_GetString(check->v.netname)) & 1))) {
+
+			if (AP_IsLocChecked (loc_hash, "items") || ((str_return_numeric_state (PR_GetString (check->v.netname)) & 1))) {
 				const char* netname = PR_GetString (check->v.netname);
 				if (!(str_return_numeric_state (PR_GetString (check->v.netname)) & 1)) {
 					// need to set checked status in netname
 					check->v.netname = PR_SetEngineString (str_add_numeric_state (netname, 1, 0));
 				}
-				if (ED_HasTargets (check)){
-					if ((last_trigger_change == 0.0f || fabsf (last_trigger_change - qcvm->time) > 2.0f))
+				if (ED_HasTargets (check)) {
+					if (fabsf (last_trigger_change - qcvm->time) > AP_EDICT_RESPAWN_TIMER)
 					{
 						if (!(str_return_numeric_state (netname) & 2))
 						{
@@ -181,7 +182,7 @@ static void SV_AdjustAPModels (void)
 						}
 						else if (str_return_numeric_state (netname) & 3) {
 							// model is init'd, check if we need to respawn
-							if (check->v.modelindex != SV_ModelIndex ("progs/ap-logo-white.mdl") && check->v.solid != SOLID_TRIGGER) {							check->v.solid = SOLID_TRIGGER;
+							if (check->v.modelindex != SV_ModelIndex ("progs/ap-logo-white.mdl") && check->v.solid != SOLID_TRIGGER) {
 								check->v.solid = SOLID_TRIGGER;
 								check->v.modelindex = SV_ModelIndex ("progs/ap-logo-white.mdl");
 								check->v.model = PR_SetEngineString ("progs/ap-logo-white.mdl");
@@ -190,7 +191,7 @@ static void SV_AdjustAPModels (void)
 						}
 					}
 				}
-				else {
+				else if (check->v.modelindex != 0) {
 					check->v.solid = SOLID_NOT;
 					check->v.modelindex = 0;
 					//check->v.model = 0;
