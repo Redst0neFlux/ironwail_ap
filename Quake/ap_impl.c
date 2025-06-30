@@ -2,11 +2,14 @@
 // [ap] includes
 #include "ap_impl.h"
 #include <APCc.h>
-#include <windows.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
 #include <rapidhash.h>
+#ifdef _WIN32
+#include <windows.h>  // For HANDLE, GetStdHandle, WriteConsoleA, MessageBoxW, MultiByteToWideChar
+#include <wchar.h>    // For wchar_t
+#endif
 
 // Func Defs // AP Impl Funcs
 void AP_Initialize (json_t* game_config, ap_connection_settings_t connection);
@@ -200,65 +203,101 @@ static bool reached_goal = 0;
 // AP Win/Con Funcs
 void ap_printf (const char* format, ...)
 {
+	va_list args;
+	va_start (args, format);
+
+#ifdef _WIN32
 	HANDLE hConsole = GetStdHandle (STD_OUTPUT_HANDLE);
 	if (hConsole == INVALID_HANDLE_VALUE) {
 		fprintf (stderr, "Error getting standard handle.\n");
+		va_end (args);
 		return;
 	}
 
-	va_list args;
-	va_start (args, format);
 	int bufferSize = vsnprintf (NULL, 0, format, args) + 1;
 	char* buffer = (char*)malloc (bufferSize);
 
 	if (buffer == NULL) {
 		fprintf (stderr, "Memory allocation failed.\n");
+		va_end (args);
 		return;
 	}
-	
-	vsnprintf (buffer, bufferSize, format, args);
+
 	va_end (args);
+	va_start (args, format);
+
+	vsnprintf (buffer, bufferSize, format, args);
 	WriteConsoleA (hConsole, buffer, (DWORD)strlen (buffer), NULL, NULL);
 	free (buffer);
-	return;
+
+#else
+	vfprintf (stdout, format, args);
+	fflush (stdout);
+#endif
+
+	va_end (args);
 }
 
 void ap_printfd (const char* format, ...)
 {
-	if (!AP_DEBUG) return;
-	HANDLE hConsole = GetStdHandle (STD_OUTPUT_HANDLE);
-	if (hConsole == INVALID_HANDLE_VALUE) {
-		fprintf (stderr, "Error getting standard handle.\n");
-		return;
-	}
+	if (!AP_DEBUG) return; 
 
 	va_list args;
 	va_start (args, format);
+
+#ifdef _WIN32
+	HANDLE hConsole = GetStdHandle (STD_OUTPUT_HANDLE);
+	if (hConsole == INVALID_HANDLE_VALUE) {
+		fprintf (stderr, "Error getting standard handle.\n");
+		va_end (args);
+		return;
+	}
+
 	int bufferSize = vsnprintf (NULL, 0, format, args) + 1;
 	char* buffer = (char*)malloc (bufferSize);
 
 	if (buffer == NULL) {
 		fprintf (stderr, "Memory allocation failed.\n");
+		va_end (args);
 		return;
 	}
 
-	vsnprintf (buffer, bufferSize, format, args);
 	va_end (args);
+	va_start (args, format);
+
+	vsnprintf (buffer, bufferSize, format, args);
 	WriteConsoleA (hConsole, buffer, (DWORD)strlen (buffer), NULL, NULL);
 	free (buffer);
-	return;
+
+#else
+	vfprintf (stdout, format, args);
+	fflush (stdout);
+#endif
+
+	va_end (args);
 }
 
 void ap_error (const char* errorMsg, ...)
 {
-	wchar_t w_msg[1024];
-	char buffer[1024];
 	va_list args;
 	va_start (args, errorMsg);
+
+#ifdef _WIN32
+	wchar_t w_msg[1024];
+	char buffer[1024];
+
 	vsnprintf (buffer, sizeof (buffer), errorMsg, args);
-	va_end (args);
 	MultiByteToWideChar (CP_UTF8, 0, buffer, -1, w_msg, sizeof (w_msg) / sizeof (w_msg[0]));
 	MessageBoxW (NULL, w_msg, L"AP Error", MB_OK | MB_SETFOREGROUND | MB_ICONSTOP);
+
+#else
+	fprintf (stderr, "ERROR: ");
+	vfprintf (stderr, errorMsg, args);
+	fprintf (stderr, "\n");
+	fflush (stderr);
+#endif
+
+	va_end (args);
 }
 
 // Local AP Vars
