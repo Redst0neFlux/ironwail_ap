@@ -28,8 +28,8 @@ If set to 0, the HUD element only shows up when the scoreboard is open (tab by d
 These cvars are for the automap:
 |CVAR|Description|
 |---|---|
-|ap_highlighthinted|Hightlight hinted items in green on the automap|
-|ap_showmonsters|Show monsters (red) in the automap|
+|ap_highlighthinted|Highlight hinted items in green on the automap|
+|ap_showmonsters|Show monsters (red) on the automap|
 
 Audio cvars:
 |CVAR|Description|
