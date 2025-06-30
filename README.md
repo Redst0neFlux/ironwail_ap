@@ -14,6 +14,8 @@ Currently only Windows x64 is supported.
 - Fill out the file ap_connect_info.json
 - Launch the game and bind the new keybinds at the bottom of Options->Key Setup
 
+- If you want to use expansions, move their *.pak file/s over to the folder with the same name in the ironwail_ap directory
+
 ## New cvars:
 If set to 0, the HUD element only shows up when the scoreboard is open (tab by default).
 |CVAR|Description|
@@ -26,8 +28,8 @@ If set to 0, the HUD element only shows up when the scoreboard is open (tab by d
 These cvars are for the automap:
 |CVAR|Description|
 |---|---|
-|ap_highlighthinted|Hightlight hinted items in green on the automap|
-|ap_showmonsters|Show monsters (red) in the automap|
+|ap_highlighthinted|Highlight hinted items in green on the automap|
+|ap_showmonsters|Show monsters (red) on the automap|
 
 Audio cvars:
 |CVAR|Description|
