@@ -1812,8 +1812,8 @@ void ED_LoadFromFile (const char *data)
 		}
 		else*/ 
 		if (!strncmp (PR_GetString (remove_ent->v.classname), "item_", 5) || !strncmp (PR_GetString (remove_ent->v.classname), "weapon_", 7)) {
-			remove_ent->v.solid = SOLID_NOT;
-			remove_ent->v.model = 0;
+			remove_ent->v.solid = 0;
+			//remove_ent->v.model = 0;
 			remove_ent->v.modelindex = 0;
 		}
 		else { 

@@ -1018,6 +1018,7 @@ GetGameSummary
 */
 char* all_kills_lastmap;
 extern float ap_giveallkills;
+int last_killcount = 0;
 static void GetGameSummary (summary_t *s)
 {
 	if (!cl_titlestats.value || cls.state != ca_connected || cls.signon != SIGNONS)
@@ -1036,19 +1037,41 @@ static void GetGameSummary (summary_t *s)
 		s->stats.total_monsters = cl.stats[STAT_TOTALMONSTERS];
 		s->stats.secrets        = cl.stats[STAT_SECRETS];
 		s->stats.total_secrets  = cl.stats[STAT_TOTALSECRETS];
-		// [ap] Killed a monster, check if we have max kills
+		
 		if (!all_kills_lastmap) all_kills_lastmap = (char*)malloc (129);
-		if (all_kills_lastmap != NULL && strcmp(all_kills_lastmap, cl.mapname) && ( (cl.stats[STAT_MONSTERS] == cl.stats[STAT_TOTALMONSTERS])) || ap_giveallkills == 1.0) {
-			q_strlcpy (all_kills_lastmap, cl.mapname, countof (s->map));
-			const char* suffix = "all_kills";
-			char* combined_string = (char*)malloc ((10 + strlen (sv.name) + 1) * sizeof (char));
-			if (combined_string) {
-				strcpy (combined_string, sv.name);
-				strcat (combined_string, suffix);
+		// [ap] Killed a monster, check if we have max kills
+		if (last_killcount != cl.stats[STAT_MONSTERS]) {
+			last_killcount = cl.stats[STAT_MONSTERS];
+			// Iterate over all edicts to see if an alive monster is left
+			edict_t* ent;
+			qboolean all_kills = 1;
+
+			PR_SwitchQCVM (&sv.qcvm);
+
+			for (int i = 0; i < qcvm->num_edicts; i++)
+			{
+				ent = EDICT_NUM (i);
+				if (!strncmp ("monster", PR_GetString (ent->v.classname), 7) && ent->v.health > 0)
+					all_kills = 0;
 			}
-			uint64_t loc_hash = generate_hash (999, 999, 999, combined_string);
-			if (!AP_DEBUG_SPAWN) AP_CheckLocation (loc_hash, "items");
-			ap_giveallkills = 0.0;
+
+			if (qcvm->num_edicts > 0 && (all_kills && all_kills_lastmap != NULL && strcmp (all_kills_lastmap, cl.mapname))) {
+				q_strlcpy (all_kills_lastmap, cl.mapname, countof (s->map));
+				const char* suffix = "all_kills";
+				char* combined_string = (char*)malloc ((10 + strlen (sv.name) + 1) * sizeof (char));
+				if (combined_string) {
+					strcpy (combined_string, sv.name);
+					strcat (combined_string, suffix);
+				}
+				uint64_t loc_hash = generate_hash (999, 999, 999, combined_string);
+
+				if (ap_giveallkills == 1.0) AP_CheckLocation (loc_hash, "items");
+				else if (!AP_DEBUG_SPAWN) AP_CheckLocation (loc_hash, "items");
+				
+				ap_giveallkills = 0.0;
+			}
+
+			PR_SwitchQCVM (NULL);
 		}
 	}
 }

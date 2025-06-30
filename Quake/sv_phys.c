@@ -169,6 +169,8 @@ static void SV_AdjustAPModels (void)
 					check->v.netname = PR_SetEngineString (str_add_numeric_state (netname, 1, 0));
 				}
 				if (ED_HasTargets (check)) {
+					// adjust ap-white models that were touched recently
+					if (check->v.solid == 0 && check->v.modelindex != 0) check->v.modelindex = 0;
 					if (fabsf (last_trigger_change - qcvm->time) > AP_EDICT_RESPAWN_TIMER)
 					{
 						if (!(str_return_numeric_state (netname) & 2))
@@ -190,12 +192,13 @@ static void SV_AdjustAPModels (void)
 							}
 						}
 					}
+					else if (check->v.modelindex != 0 && check->v.modelindex != SV_ModelIndex ("progs/ap-logo-white.mdl")) {
+						check->v.solid = 0;
+						check->v.modelindex = 0;
+						//check->v.model = 0;
+					}
 				}
-				else if (check->v.modelindex != 0) {
-					check->v.solid = SOLID_NOT;
-					check->v.modelindex = 0;
-					//check->v.model = 0;
-				}
+				
 			}
 		}
 	}
@@ -1329,19 +1332,8 @@ void SV_Physics_Client (edict_t	*ent, int num)
 			ap_fresh_map = 1;
 		}
 		// check if we have killed shub and send the changelevel item
-		// also send all_kills because killcount is bugged
 		if (CL_InCutscene () && !strcmp (sv.name, "end"))
-		{
 			AP_SendExit (sv.name);
-			const char* suffix = "all_kills";
-			char* combined_string = (char*)malloc ((10 + strlen (sv.name) + 1) * sizeof (char));
-			if (combined_string) {
-				strcpy (combined_string, sv.name);
-				strcat (combined_string, suffix);
-			}
-			uint64_t loc_hash = generate_hash (999, 999, 999, combined_string);
-			AP_CheckLocation (loc_hash, "items");
-		}
 		else if (!AP_DEBUG_SPAWN && !strcmp (ap_basegame, "hipnotic") && CL_InCutscene () && !strcmp (sv.name, "hipend"))
 			AP_SendExit (sv.name);
 		else if (!AP_DEBUG_SPAWN && !strcmp (ap_basegame, "rogue") && cl.intermission && !strcmp (sv.name, "r2m8"))

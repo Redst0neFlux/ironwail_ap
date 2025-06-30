@@ -333,8 +333,10 @@ SV_AreaTriggerEdicts ( edict_t *ent, areanode_t *node, edict_t **list, int *list
 				else add_touched_edict (loc_hash, "items");
 				if (!strncmp ("AP", netname, 2)) {
 					touch->v.netname = PR_SetEngineString (str_add_numeric_state (netname, 1, 0));
+					//touch->v.modelindex = 0;
+					//touch->v.solid = 0;
 					last_trigger_change = qcvm->time;
-					touch->v.modelindex = 0;
+					Cbuf_AddText ("bf\n");
 				}
 			}
 			// we are touching an invisible location, dont interact
@@ -344,9 +346,11 @@ SV_AreaTriggerEdicts ( edict_t *ent, areanode_t *node, edict_t **list, int *list
 			}
 			// [ap] We are touching a checked location that respawned, disable on touch
 			else if (is_item_checked && touch->v.modelindex == SV_ModelIndex ("progs/ap-logo-white.mdl")) {
-				touch->v.modelindex = 0;
-				touch->v.solid = 0;
+				touch->v.netname = PR_SetEngineString (str_add_numeric_state (netname, 1, 0));
+				//touch->v.modelindex = 0;
+				//touch->v.solid = 0;
 				last_trigger_change = qcvm->time;
+				Cbuf_AddText ("bf\n");
 			}
 			//Con_DPrintf("AP_LOCATION %s Touched %s (%i) \n", PR_GetString(ent->v.classname), PR_GetString(touch->v.classname), NUM_FOR_EDICT(touch), touch->v.origin[0], touch->v.origin[1], touch->v.origin[2]);
 		}
