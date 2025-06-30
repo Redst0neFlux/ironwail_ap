@@ -14,6 +14,8 @@ Currently only Windows x64 is supported.
 - Fill out the file ap_connect_info.json
 - Launch the game and bind the new keybinds at the bottom of Options->Key Setup
 
+- If you want to use expansions, move their *.pak file/s over to the folder with the same name in the ironwail_ap directory
+
 ## New cvars:
 If set to 0, the HUD element only shows up when the scoreboard is open (tab by default).
 |CVAR|Description|
