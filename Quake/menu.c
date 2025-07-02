@@ -3879,12 +3879,21 @@ void M_AdjustSliders (int dir)
 			curr_alwaysrun = ALWAYSRUN_OFF;
 			
 		target_alwaysrun = (ALWAYSRUN_ITEMS + curr_alwaysrun + dir) % ALWAYSRUN_ITEMS;
+		if (!ap_can_run () && curr_alwaysrun == 2 && dir == -1)
+			target_alwaysrun = 0;
 			
 		if (target_alwaysrun == ALWAYSRUN_VANILLA)
 		{
-			Cvar_SetValue ("cl_alwaysrun", 0);
-			Cvar_SetValue ("cl_forwardspeed", 400);
-			Cvar_SetValue ("cl_backspeed", 400);
+			if (ap_can_run ()) {
+				Cvar_SetValue ("cl_alwaysrun", 0);
+				Cvar_SetValue ("cl_forwardspeed", 400);
+				Cvar_SetValue ("cl_backspeed", 400);
+			}
+			else {
+				Cvar_SetValue ("cl_alwaysrun", 1);
+				Cvar_SetValue ("cl_forwardspeed", 200);
+				Cvar_SetValue ("cl_backspeed", 200);
+			}
 		}
 		else if (target_alwaysrun == ALWAYSRUN_QUAKESPASM)
 		{

@@ -192,17 +192,15 @@ static void SV_AdjustAPModels (void)
 							}
 						}
 					}
-					else if (check->v.modelindex != 0 && check->v.modelindex != SV_ModelIndex ("progs/ap-logo-white.mdl")) {
-						check->v.solid = 0;
-						check->v.modelindex = 0;
-						//check->v.model = 0;
-					}
 				}
-				
+				// checked locations without targets should be invisible, enforce
+				else if ((check->v.solid != 0 || check->v.modelindex != 0) && check->v.modelindex != SV_ModelIndex ("progs/ap-logo-white.mdl")) {
+					check->v.solid = 0;
+					check->v.modelindex = 0;
+				}
 			}
 		}
 	}
-	
 }
 
 

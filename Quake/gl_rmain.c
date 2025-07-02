@@ -1574,10 +1574,10 @@ static void R_ShowBoundingBoxes (void)
 
 	if (focused && (AP_DEBUG || !(str_return_numeric_state (PR_GetString (focused->v.netname)) & 1)))
 		VEC_PUSH (bbox_linked, focused);
-	/*if (focused && AP_DEBUG) {
-		Con_SafePrintf ("NName %s Solid %f MIndex %f\n", PR_GetString(focused->v.netname), focused->v.solid, focused->v.modelindex);
+	if (focused && AP_DEBUG) {
+		//Con_SafePrintf ("NName %s Solid %f MIndex %f\n", PR_GetString(focused->v.netname), focused->v.solid, focused->v.modelindex);
 		//Con_SafePrintf ("Class %s MIndex %f Model %s\n",PR_GetString(focused->v.classname), focused->v.modelindex, PR_GetString (focused->v.model));
-	}*/
+	}
 	// [ap] only draw linking arrows if debug is on or no filter is set
 	if (focused && r_showbboxes_links.value && (!ap_can_automap (sv.name) || AP_DEBUG || !strcmp(r_showbboxes_filter_strings, "")))
 	{
