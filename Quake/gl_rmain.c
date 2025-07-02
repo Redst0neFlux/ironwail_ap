@@ -1378,6 +1378,8 @@ r_showbboxes_filter artifact =trigger_secret #42
 char r_showbboxes_filter_strings[MAXCMDLINE];
 qboolean r_showbboxes_filter_byindex;
 
+extern cvar_t ap_showmonsters;
+
 static qboolean R_ShowBoundingBoxesFilter (edict_t *ed)
 {
 	char entnum[16] = "";
@@ -1392,6 +1394,10 @@ static qboolean R_ShowBoundingBoxesFilter (edict_t *ed)
 
 	if (ed->v.classname)
 		classname = PR_GetString (ed->v.classname);
+
+	// [ap] dont show dead monsters in automap
+	if (ap_showmonsters.value && ed->v.health <= 0 && classname && !strncmp (classname, "monster_", 8))
+		return false;
 
 	for (filter_p = r_showbboxes_filter_strings; *filter_p; filter_p += strlen (filter_p) + 1)
 	{
@@ -1545,7 +1551,7 @@ static void R_ShowBoundingBoxes (void)
 			continue;
 
 		// Classname or edict num filter
-		if (!R_ShowBoundingBoxesFilter(ed))
+		if (!R_ShowBoundingBoxesFilter (ed))
 			continue;
 
 		// PVS filter

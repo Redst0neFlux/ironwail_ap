@@ -1073,8 +1073,54 @@ extern cvar_t ap_printdoorblocked;
 extern cvar_t ap_printbuttonblocked;
 // sound cue
 extern cvar_t ap_playsound;
+// monster automap
+extern cvar_t ap_showmonsters;
+extern char r_showbboxes_filter_strings[MAXCMDLINE];
 
 float next_sound_time;
+
+void remove_monster_from_bboxfilter (char buffer[256]) {
+	const char* target = "monster_";
+	size_t target_len = strlen (target);
+	char* read_ptr = buffer;
+	char* write_ptr = buffer;
+
+	while (1) {
+		if (*read_ptr == '\0' && *(read_ptr + 1) == '\0') {
+			*write_ptr++ = '\0';
+			break;
+		}
+
+		if (strncmp (read_ptr, target, target_len) == 0) {
+			read_ptr += target_len;
+		}
+		else {
+			*write_ptr++ = *read_ptr++;
+		}
+	}
+
+	while (write_ptr < buffer + 256) {
+		*write_ptr++ = '\0';
+	}
+}
+
+bool contains_monster (const char buffer[256]) {
+	const char* target = "monster_";
+	size_t len = strlen (target);
+
+	for (int i = 0; i < 256 - len + 1; ++i) {
+		if (buffer[i] == '\0' && buffer[i + 1] == '\0') {
+			break;
+		}
+
+		if (strncmp (&buffer[i], target, len) == 0) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 
 /*
 ================
@@ -1099,6 +1145,14 @@ void SV_Physics_Client (edict_t	*ent, int num)
 		// [ap] TODO: Maybe every ~10th tic instead?
 		ap_process_ingame_tic ();
 
+		// Check if monsters need to be added to the automap
+		if (ap_showmonsters.value == 1 && !contains_monster(r_showbboxes_filter_strings)) {
+			Cbuf_AddText ("r_showbboxes_filter item_ weapon_ trigger_secret trigger_changelevel monster_\n");
+		}
+		else if (ap_showmonsters.value == 0 && contains_monster (r_showbboxes_filter_strings)) {
+			remove_monster_from_bboxfilter (r_showbboxes_filter_strings);
+		}
+		
 		if (ap_fresh_map) {
 			ap_fresh_map = 0;
 			ap_prog_sounds = 0;

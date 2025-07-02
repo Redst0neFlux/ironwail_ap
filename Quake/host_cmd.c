@@ -2227,7 +2227,9 @@ void Host_SavegameComment (char text[SAVEGAME_COMMENT_LENGTH + 1])
 		text[i] = ' ';
 	text[SAVEGAME_COMMENT_LENGTH] = '\0';
 
-	levelname = cl.levelname[0] ? cl.levelname : cl.mapname;
+	// [ap] instead of levelname use mapname for easier identification
+	//levelname = cl.levelname[0] ? cl.levelname : cl.mapname;
+	levelname = cl.mapname;
 
 	i = (int) strlen(levelname);
 	if (i > 22) i = 22;
