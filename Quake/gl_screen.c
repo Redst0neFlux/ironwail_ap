@@ -1605,8 +1605,9 @@ void SCR_DrawEdictInfo (void)
 					char* sub_str = extract_bracketed_part (ap_loc_name);
 					set_clipboard_text (sub_str);
 				}
-				if (AP_DEBUG && ap_loc_name &&!strcmp (ap_loc_name, "") && (!strncmp (PR_GetString (ed->v.classname), "item_", 5) || !strncmp (PR_GetString (ed->v.classname), "weapon_", 7)))
-					Con_SafePrintf ("%s [%f %f %f]\n", PR_GetString (ed->v.classname), ed->v.origin[0], ed->v.origin[1], ed->v.origin[2]);
+				if (AP_DEBUG) {
+					//Con_SafePrintf ("%s [%f %f %f] %zu\n", PR_GetString (ed->v.classname), ed->v.origin[0], ed->v.origin[1], ed->v.origin[2], loc_hash);
+				}
 				VEC_CLEAR (scr_edictoverlaystrings);
 				MultiString_Append (&scr_edictoverlaystrings, "");
 				MultiString_Append (&scr_edictoverlaystrings, va ("%s", ap_loc_name));
@@ -1617,13 +1618,14 @@ void SCR_DrawEdictInfo (void)
 				const char* classname = PR_GetString (ed->v.classname);
 				uint64_t loc_hash = generate_hash (ed->v.absmax[0], ed->v.absmax[1], ed->v.absmax[2], classname);
 				char* ap_loc_name = "";
-				if (!strcmp (PR_GetString (ed->v.classname), "trigger_secret"))  ap_loc_name = edict_get_loc_name (loc_hash, "secrets");
-				else ap_loc_name = edict_get_loc_name (loc_hash, "exits");
-				VEC_CLEAR (scr_edictoverlaystrings);
-				MultiString_Append (&scr_edictoverlaystrings, "");
-				MultiString_Append (&scr_edictoverlaystrings, va ("%s", ap_loc_name));
-				MultiString_Append (&scr_edictoverlaystrings, "");
-				MultiString_Append (&scr_edictoverlaystrings, PR_GetString (ed->v.classname));
+				if (!strcmp (PR_GetString (ed->v.classname), "trigger_secret"))  
+					ap_loc_name = edict_get_loc_name (loc_hash, "secrets");
+				else 
+					ap_loc_name = edict_get_loc_name (loc_hash, "exits");
+
+				if (AP_DEBUG) {
+					//Con_SafePrintf ("%s [%f %f %f] %zu\n", PR_GetString (ed->v.classname), ed->v.absmax[0], ed->v.absmax[1], ed->v.absmax[2], loc_hash);
+				}
 				VEC_CLEAR (scr_edictoverlaystrings);
 				MultiString_Append (&scr_edictoverlaystrings, "");
 				MultiString_Append (&scr_edictoverlaystrings, va ("%s", ap_loc_name));

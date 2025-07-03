@@ -2220,19 +2220,31 @@ void Host_SavegameComment (char text[SAVEGAME_COMMENT_LENGTH + 1])
 {
 	int		i;
 	char	*levelname;
-	char	kills[20];
+	//char	kills[20];
 	char	*p;
 
 	for (i = 0; i < SAVEGAME_COMMENT_LENGTH; i++)
 		text[i] = ' ';
 	text[SAVEGAME_COMMENT_LENGTH] = '\0';
 
-	// [ap] instead of levelname use mapname for easier identification
-	//levelname = cl.levelname[0] ? cl.levelname : cl.mapname;
-	levelname = cl.mapname;
+	// [ap] instead of only levelname also use mapname for easier identification
+	levelname = cl.levelname[0] ? cl.levelname : cl.mapname;
+	if (strcmp (levelname, cl.mapname) != 0) {
+		size_t len = strlen (levelname) + strlen (cl.mapname) + 4;
+		char* combined = malloc (len);
+		if (combined) {
+			snprintf (combined, len, "%s %s", cl.mapname, levelname);
+			levelname = combined;
+		}
+		else
+			levelname = cl.mapname;
+	}
+	else
+		levelname = cl.mapname;
 
 	i = (int) strlen(levelname);
-	if (i > 22) i = 22;
+	//if (i > 22) i = 22;
+	if (i > 40) i = 40;
 	memcpy (text, levelname, (size_t)i);
 
 // Remove CR/LFs from level name to avoid broken saves, e.g. with autumn_sp map:
@@ -2242,8 +2254,9 @@ void Host_SavegameComment (char text[SAVEGAME_COMMENT_LENGTH + 1])
 	while ((p = strchr(text, '\r')) != NULL)
 		*p = ' ';
 
-	sprintf (kills,"kills:%3i/%3i", cl.stats[STAT_MONSTERS], cl.stats[STAT_TOTALMONSTERS]);
-	memcpy (text+22, kills, strlen(kills));
+	// [ap] remove killcount from savefile
+	//sprintf (kills,"kills:%3i/%3i", cl.stats[STAT_MONSTERS], cl.stats[STAT_TOTALMONSTERS]);
+	//memcpy (text+22, kills, strlen(kills));
 
 // convert space to _ to make stdio happy
 	for (i = 0; i < SAVEGAME_COMMENT_LENGTH; i++)
