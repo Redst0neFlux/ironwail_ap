@@ -5143,6 +5143,7 @@ static const menukeybind_t menubinds[] =
 	{"impulse 236",		"AP Armor",				KDM_ANY},
 	{"",				"",						KDM_ANY},
 	{"automap",			"AP Automap",			KDM_ANY},
+	{"showmonsters",	"AP ShowMonsters",		KDM_ANY},
 	{"menu_maps",		"AP Map Menu",			KDM_ANY},
 };
 

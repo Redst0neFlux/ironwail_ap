@@ -1016,7 +1016,6 @@ static int CountActiveClients (void)
 GetGameSummary
 ==================
 */
-char* all_kills_lastmap;
 extern float ap_giveallkills;
 int last_killcount = 0;
 static void GetGameSummary (summary_t *s)
@@ -1025,7 +1024,6 @@ static void GetGameSummary (summary_t *s)
 	{
 		s->map[0] = 0;
 		memset (&s->stats, 0, sizeof (s->stats));
-		if (!all_kills_lastmap) all_kills_lastmap = (char*)malloc (129);
 	}
 	else
 	{
@@ -1038,7 +1036,6 @@ static void GetGameSummary (summary_t *s)
 		s->stats.secrets        = cl.stats[STAT_SECRETS];
 		s->stats.total_secrets  = cl.stats[STAT_TOTALSECRETS];
 		
-		if (!all_kills_lastmap) all_kills_lastmap = (char*)malloc (129);
 		// [ap] Killed a monster, check if we have max kills
 		if (last_killcount != cl.stats[STAT_MONSTERS]) {
 			last_killcount = cl.stats[STAT_MONSTERS];
@@ -1051,12 +1048,11 @@ static void GetGameSummary (summary_t *s)
 			for (int i = 0; i < qcvm->num_edicts; i++)
 			{
 				ent = EDICT_NUM (i);
-				if (!strncmp ("monster", PR_GetString (ent->v.classname), 7) && ent->v.health > 0)
+				if (!strncmp ("monster", PR_GetString (ent->v.classname), 7) && ent->v.health > 0 && ent->v.modelindex != 0)
 					all_kills = 0;
 			}
 
-			if (qcvm->num_edicts > 0 && (all_kills && all_kills_lastmap != NULL && strcmp (all_kills_lastmap, cl.mapname))) {
-				q_strlcpy (all_kills_lastmap, cl.mapname, countof (s->map));
+			if (qcvm->num_edicts > 0 && all_kills) {
 				const char* suffix = "all_kills";
 				char* combined_string = (char*)malloc ((10 + strlen (sv.name) + 1) * sizeof (char));
 				if (combined_string) {

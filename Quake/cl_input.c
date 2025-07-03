@@ -59,6 +59,7 @@ kbutton_t	in_strafe, in_speed, in_use, in_jump, in_attack;
 kbutton_t	in_up, in_down;
 // [ap]
 kbutton_t	in_automap;
+kbutton_t	in_showmon;
 
 int			in_impulse;
 
@@ -208,6 +209,10 @@ void IN_Automap (void) {
 		Cvar_SetQuick (showbb, "1");
 		Con_SafePrintf ("Automap on\n");
 	}
+}
+
+void IN_SHOWMON (void) {
+	ap_showmonsters.value = !ap_showmonsters.value;
 }
 
 void IN_ClearEdictList (void) {
@@ -602,6 +607,7 @@ void CL_InitInput (void)
 	Cmd_AddCommand ("-mlook", IN_MLookUp);
 	// [ap] add new keybinds
 	Cmd_AddCommand ("automap", IN_Automap);
+	Cmd_AddCommand ("showmonsters", IN_SHOWMON);
 	Cmd_AddCommand ("ap_giveallkills", IN_GiveAllKills);
 	if (AP_DEBUG) Cmd_AddCommand ("clear_edictlist", IN_ClearEdictList);
 	if (AP_DEBUG_SPAWN || AP_DEBUG) {
