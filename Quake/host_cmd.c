@@ -3079,6 +3079,7 @@ static void Host_PreSpawn_f (void)
 Host_Spawn_f
 ==================
 */
+extern int last_killcount;
 static void Host_Spawn_f (void)
 {
 	int		i;
@@ -3198,6 +3199,7 @@ static void Host_Spawn_f (void)
 	// [ap] this is called on spawn and save/load
 	// only apply when a new map is loaded or a death trap was triggered
 	if (ap_fresh_map && !AP_DEBUG_SPAWN) {
+		last_killcount = -1;
 		eval_t* val; // [ap]
 		ap_sync_inventory ();
 		int	v = ap_get_quakec_apflag (); // [ap] return quakec flag to be set

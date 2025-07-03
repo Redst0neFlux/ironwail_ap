@@ -1017,7 +1017,7 @@ GetGameSummary
 ==================
 */
 extern float ap_giveallkills;
-int last_killcount = 0;
+int last_killcount = -1;
 static void GetGameSummary (summary_t *s)
 {
 	if (!cl_titlestats.value || cls.state != ca_connected || cls.signon != SIGNONS)
@@ -1061,10 +1061,11 @@ static void GetGameSummary (summary_t *s)
 				}
 				uint64_t loc_hash = generate_hash (999, 999, 999, combined_string);
 
-				if (ap_giveallkills == 1.0) AP_CheckLocation (loc_hash, "items");
-				else if (!AP_DEBUG_SPAWN) AP_CheckLocation (loc_hash, "items");
+				/*if (ap_giveallkills == 1.0) AP_CheckLocation (loc_hash, "items");
+				else*/ 
+				if (!AP_DEBUG_SPAWN) AP_CheckLocation (loc_hash, "items");
 				
-				ap_giveallkills = 0.0;
+				//ap_giveallkills = 0.0;
 			}
 
 			PR_SwitchQCVM (NULL);

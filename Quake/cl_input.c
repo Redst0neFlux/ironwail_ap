@@ -220,10 +220,10 @@ void IN_ClearEdictList (void) {
 }
 
 float ap_giveallkills;
-void IN_GiveAllKills (void) {
+/*void IN_GiveAllKills (void) {
 	if (ap_giveallkills != 0) ap_giveallkills = 0.0;
 	else ap_giveallkills = 1.0;
-}
+}*/
 
 void IN_DebugDive (void) {
 	ap_debug_dive = !ap_debug_dive;
@@ -608,7 +608,7 @@ void CL_InitInput (void)
 	// [ap] add new keybinds
 	Cmd_AddCommand ("automap", IN_Automap);
 	Cmd_AddCommand ("showmonsters", IN_SHOWMON);
-	Cmd_AddCommand ("ap_giveallkills", IN_GiveAllKills);
+	//Cmd_AddCommand ("ap_giveallkills", IN_GiveAllKills);
 	if (AP_DEBUG) Cmd_AddCommand ("clear_edictlist", IN_ClearEdictList);
 	if (AP_DEBUG_SPAWN || AP_DEBUG) {
 		Cmd_AddCommand ("ap_debug_dive", IN_DebugDive);
