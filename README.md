@@ -13,7 +13,6 @@ Currently only Windows x64 is supported.
 - Grab PAK0.pak and PAK1.pak from an installation of Quake 1 and move it to .\\ironwail_ap\\id1\\
 - Fill out the file ap_connect_info.json
 - Launch the game and bind the new keybinds at the bottom of Options->Key Setup
-
 - If you want to use expansions, move their *.pak file/s over to the folder with the same name in the ironwail_ap directory
 
 ## New cvars:
@@ -29,7 +28,6 @@ These cvars are for the automap:
 |CVAR|Description|
 |---|---|
 |ap_highlighthinted|Highlight hinted items in green on the automap|
-|ap_showmonsters|Show monsters (red) on the automap|
 
 Audio cvars:
 |CVAR|Description|
@@ -48,11 +46,6 @@ The messages have a 2 second cooldown so the player doesn't get spammed.
 |---|---|
 |ap_printdoorblocked|Show a console message if a door was blocked|
 |ap_printbuttonblocked|Show a console message if a button was blocked|
-
-Debug cvars:
-|CVAR|Description|
-|---|---|
-|ap_giveallkills|Awards the All-Kills check for the current map|
 
 # Original Ironwail Readme:
 
