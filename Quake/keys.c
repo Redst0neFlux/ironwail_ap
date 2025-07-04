@@ -603,7 +603,8 @@ void Key_Message (int key)
 			Cbuf_AddText ("say \"");
 		Cbuf_AddText(chat_buffer);
 		Cbuf_AddText("\"\n");
-
+		// [ap] Send chat messages to the server
+		AP_SendMsg (chat_buffer);
 		Key_EndChat ();
 		return;
 

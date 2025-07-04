@@ -240,3 +240,6 @@ uint16_t* ap_get_itemcount (uint64_t loc_hash);
 int set_clipboard_text (const char* text);
 char* extract_bracketed_part (const char* str);
 void ap_free_message_parts_array (char** parts);
+
+// lib passthrough
+void AP_SendMsg (char*);
