@@ -161,6 +161,10 @@ static void SV_AdjustAPModels (void)
 			}
 			else
 				loc_hash = generate_hash (check->baseline.origin[0], check->baseline.origin[1], check->baseline.origin[2], PR_GetString (check->v.classname));
+			
+			// make sure item and weapon spawns without modelindex are not interactable
+			if (check->v.modelindex == 0 && check->v.solid != 0)
+				check->v.solid = 0;
 
 			if (AP_IsLocChecked (loc_hash, "items") || ((str_return_numeric_state (PR_GetString (check->v.netname)) & 1))) {
 				const char* netname = PR_GetString (check->v.netname);
