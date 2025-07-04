@@ -2136,6 +2136,7 @@ static void Host_Restart_f (void)
 	char	mapname[MAX_QPATH];
 	// [ap] server restart means player death
 	ap_fresh_map = 1;
+	AP_DeathLinkClear ();
 
 	if (cls.demoplayback || !sv.active)
 		return;
