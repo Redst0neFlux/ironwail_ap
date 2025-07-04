@@ -85,6 +85,9 @@ extern cvar_t gyro_pitchsensitivity;
 extern cvar_t gyro_yawsensitivity;
 extern cvar_t gyro_noise_thresh;
 
+// [ap]
+extern cvar_t ap_disabledeathlink;
+
 extern char crosshair_char;
 
 extern qboolean quake64;
@@ -3300,6 +3303,7 @@ void M_Menu_Gamepad_f (void)
 		item (SPACER,					"")								\
 		item (OPT_CONSOLE,				"Console")						\
 		item (OPT_DEFAULTS,				"Reset All")					\
+		item (OPT_DISABLE_DEATHLINK,	"AP Disable Deathlink")			\
 	end_menu ()															\
 	begin_menu (VIDEO_OPTIONS, m_video, TITLE("Display"))				\
 		item (OPT_RESOLUTION,			"Resolution")					\
@@ -4133,6 +4137,11 @@ void M_AdjustSliders (int dir)
 		M_Menu_Calibration_f ();
 		break;
 
+	// AP Options
+	case OPT_DISABLE_DEATHLINK:
+		Cbuf_AddText ("toggle ap_disabledeathlink\n");
+		break;
+
 	default:
 		break;
 	}
@@ -4533,6 +4542,16 @@ static void M_Options_DrawItem (int y, int item)
 			M_Print (x, y, "Off");
 		break;
 
+	case OPT_DISABLE_DEATHLINK:
+		if (ap_disabledeathlink.value) {
+			M_Print (x, y, "On");
+			AP_SetDeathLinkSupported (1);
+		}
+		else {
+			M_Print (x, y, "Off");
+			AP_SetDeathLinkSupported (0);
+		}
+		break;
 	case OPT_VIEWBOB:
 		M_DrawCheckbox (x, y, cl_bob.value);
 		break;

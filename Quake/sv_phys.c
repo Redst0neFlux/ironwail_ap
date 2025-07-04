@@ -1387,9 +1387,16 @@ void SV_Physics_Client (edict_t	*ent, int num)
 		if (ap_active_traps[0]) {
 			SV_StartSound (sv_player, 0, "player/pain2.wav", 255, 1);
 			sv_player->v.health = 20;
-		}//TODO: sv_autoload 0 does nothing :(
-		if (ap_active_traps[1]) {
+		}
+		if (sv_player->v.health <= 0) {
+			// player died, send deathlink
+			if (!AP_DeathLinkPending ()) AP_DeathLinkSend ();
+		}
+		
+		//TODO: sv_autoload 0 does nothing :(
+		if (ap_active_traps[1] || AP_DeathLinkPending()) {
 			Cbuf_AddText ("impulse 237\n");
+			AP_DeathLinkClear ();
 			ap_fresh_map = 1;
 		}
 		// check if we have killed shub and send the changelevel item

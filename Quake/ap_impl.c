@@ -2012,7 +2012,7 @@ void AP_Initialize (json_t* game_config, ap_connection_settings_t connection)
 	init_item_table (json_object_get (game_config, "items"));
 	
 	AP_SetClientVersion (AP_NetworkVersion_new (0, 6, 1));
-	AP_SetDeathLinkSupported (TRUE);
+	AP_SetDeathLinkSupported (1);
 
 	AP_Init (connection.ip, connection.port, connection.game, connection.player, connection.password);
 	uint32_t timeout = 10000;

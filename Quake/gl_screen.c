@@ -106,6 +106,7 @@ cvar_t		ap_printdoorblocked = { "ap_printdoorblocked", "1", CVAR_ARCHIVE };
 cvar_t		ap_printbuttonblocked = { "ap_printbuttonblocked", "1", CVAR_ARCHIVE };
 cvar_t		ap_playsound = { "ap_playsound", "1", CVAR_ARCHIVE };
 cvar_t		ap_showmonsters = { "ap_showmonsters", "0", CVAR_ARCHIVE };
+cvar_t		ap_disabledeathlink = { "ap_disabledeathlink", "0", CVAR_ARCHIVE };
 
 //johnfitz
 cvar_t		scr_usekfont = {"scr_usekfont", "0", CVAR_NONE}; // 2021 re-release
@@ -668,6 +669,7 @@ void SCR_Init (void)
 	Cvar_RegisterVariable (&ap_printdoorblocked);
 	Cvar_RegisterVariable (&ap_playsound);
 	Cvar_RegisterVariable (&ap_showmonsters);
+	Cvar_RegisterVariable (&ap_disabledeathlink);
 	//johnfitz
 	Cvar_RegisterVariable (&scr_usekfont); // 2021 re-release
 	Cvar_SetCallback (&scr_fov, SCR_Callback_refdef);

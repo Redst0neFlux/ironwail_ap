@@ -243,3 +243,7 @@ void ap_free_message_parts_array (char** parts);
 
 // lib passthrough
 void AP_SendMsg (char*);
+void AP_SetDeathLinkSupported (bool);
+bool AP_DeathLinkPending ();
+void AP_DeathLinkClear ();
+void AP_DeathLinkSend ();
