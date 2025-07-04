@@ -1606,7 +1606,7 @@ void SCR_DrawEdictInfo (void)
 					set_clipboard_text (sub_str);
 				}
 				if (AP_DEBUG) {
-					//Con_SafePrintf ("%s %s %f %f [%f %f %f] %zu\n", PR_GetString (ed->v.classname), PR_GetString(ed->v.netname), ed->v.solid, ed->v.modelindex, ed->v.origin[0], ed->v.origin[1], ed->v.origin[2], loc_hash);
+					Con_SafePrintf ("%s %s %f %f [%f %f %f] %zu\n", PR_GetString (ed->v.classname), PR_GetString(ed->v.netname), ed->v.solid, ed->v.modelindex, ed->v.origin[0], ed->v.origin[1], ed->v.origin[2], loc_hash);
 				}
 				VEC_CLEAR (scr_edictoverlaystrings);
 				MultiString_Append (&scr_edictoverlaystrings, "");

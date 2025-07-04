@@ -347,7 +347,7 @@ SV_AreaTriggerEdicts ( edict_t *ent, areanode_t *node, edict_t **list, int *list
 			// [ap] We are touching a checked location that respawned, disable on touch
 			else if (is_item_checked && touch->v.modelindex == SV_ModelIndex ("progs/ap-logo-white.mdl")) {
 				touch->v.netname = PR_SetEngineString (str_add_numeric_state (netname, 1, 0));
-				//touch->v.modelindex = 0;
+				touch->v.modelindex = 0;
 				//touch->v.solid = 0;
 				last_trigger_change = qcvm->time;
 				Cbuf_AddText ("bf\n");
