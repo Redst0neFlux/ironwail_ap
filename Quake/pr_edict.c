@@ -1795,11 +1795,13 @@ void ED_LoadFromFile (const char *data)
 		strcpy (combined_string, sv.name);
 		strcat (combined_string, suffix);
 	}
-	Con_DPrintf ("{\"id\": %i, ", ap_item_count);
-	Con_DPrintf ("\"name\": \"%s (%i)\", ", "All Kills", ap_item_count);
-	Con_DPrintf ("\"classname\": \"%s\", ", "all_kills");
-	Con_DPrintf ("\"uuid\": %zu, ", generate_hash (999, 999, 999, combined_string));
-	Con_DPrintf ("\"mp\": 0},\n");
+	if (AP_DEBUG && AP_DEBUG_SPAWN) {
+		Con_SafePrintf ("{\"id\": %i, ", ap_item_count);
+		Con_SafePrintf ("\"name\": \"%s (%i)\", ", "All Kills", ap_item_count);
+		Con_SafePrintf ("\"classname\": \"%s\", ", "all_kills");
+		Con_SafePrintf ("\"uuid\": %zu, ", generate_hash (999, 999, 999, combined_string));
+		Con_SafePrintf ("\"mp\": 0},\n");
+	}
 	free (combined_string);
 
 	// [ap] remove entities that don't belong to the current skill

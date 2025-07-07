@@ -2170,6 +2170,7 @@ static void Host_Reconnect_f (void)
 
 	SCR_BeginLoadingPlaque ();
 	CL_ClearSignons ();		// need new connection messages
+	AP_DeathLinkClear ();
 }
 
 /*
