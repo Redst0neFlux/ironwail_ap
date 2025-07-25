@@ -9,7 +9,9 @@ jobs:
       matrix:
         platform: [x64, Win32]
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v4  
+      with:
+        submodules: recursive
     - name: Set environment variables
       run: |
         $gitrev = $(git describe --always)
